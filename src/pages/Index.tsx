@@ -1,13 +1,16 @@
 
-import React, { useState } from 'react';
-import { Mail, Clock, AlertCircle, CheckCircle, X, MoreHorizontal } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Mail, Clock, AlertCircle, CheckCircle, X, MoreHorizontal, Settings as SettingsIcon } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import EmailList from '../components/EmailList';
 import EmailDetail from '../components/EmailDetail';
 import TaskPanel from '../components/TaskPanel';
 import ReplyInterface from '../components/ReplyInterface';
 import { Email, Task } from '../types';
+import { useGmailAuth } from '../hooks/useGmailAuth';
+import { useGmailEmails } from '../hooks/useGmailEmails';
 
-// Mock data for demonstration
+// Mock data for demonstration when not connected to Gmail
 const mockEmails: Email[] = [
   {
     id: '1',
@@ -78,10 +81,22 @@ const mockTasks: Task[] = [
 ];
 
 const Index = () => {
+  const { isAuthenticated } = useGmailAuth();
+  const { emails: gmailEmails, isLoading, error, refetch } = useGmailEmails();
+  
   const [selectedEmail, setSelectedEmail] = useState<Email | null>(null);
   const [emails, setEmails] = useState<Email[]>(mockEmails);
   const [tasks, setTasks] = useState<Task[]>(mockTasks);
   const [replyTo, setReplyTo] = useState<Email | null>(null);
+
+  // Update emails when Gmail emails change
+  useEffect(() => {
+    if (isAuthenticated && gmailEmails.length > 0) {
+      setEmails(gmailEmails);
+      // Clear selection when emails change
+      setSelectedEmail(null);
+    }
+  }, [isAuthenticated, gmailEmails]);
 
   const handleEmailSelect = (email: Email) => {
     setSelectedEmail(email);
@@ -139,64 +154,124 @@ const Index = () => {
               Intelligent Email Assistant
             </span>
           </div>
-          <div className="flex items-center space-x-2 text-sm text-slate-600">
-            <div className="flex items-center space-x-1">
-              <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-              <span>Connected to Gmail</span>
-            </div>
+          <div className="flex items-center space-x-4 text-sm text-slate-600">
+            {isAuthenticated ? (
+              <div className="flex items-center space-x-1">
+                <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                <span>Connected to Gmail</span>
+              </div>
+            ) : (
+              <div className="flex items-center space-x-1">
+                <div className="w-2 h-2 bg-yellow-400 rounded-full"></div>
+                <span>Not connected</span>
+              </div>
+            )}
+
+            <Link 
+              to="/settings" 
+              className="p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-full transition-colors"
+              title="Settings"
+            >
+              <SettingsIcon className="w-5 h-5" />
+            </Link>
           </div>
         </div>
       </header>
 
-      {/* Main Layout */}
-      <div className="flex h-[calc(100vh-80px)]">
-        {/* Email List Panel */}
-        <div className="w-96 bg-white/60 backdrop-blur-sm border-r border-slate-200">
-          <EmailList 
-            emails={emails} 
-            onEmailSelect={handleEmailSelect}
-            selectedEmail={selectedEmail}
-          />
-        </div>
-
-        {/* Email Detail Panel */}
-        <div className="flex-1 bg-white/40 backdrop-blur-sm">
-          {selectedEmail ? (
-            <EmailDetail 
-              email={selectedEmail} 
-              onReply={() => setReplyTo(selectedEmail)}
-            />
-          ) : (
-            <div className="h-full flex items-center justify-center">
-              <div className="text-center text-slate-500">
-                <Mail className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                <h3 className="text-lg font-medium mb-2">Select an email</h3>
-                <p className="text-sm">Choose an email from the list to view details</p>
-              </div>
+      {isAuthenticated ? (
+        <>
+          {/* Main Layout */}
+          <div className="flex h-[calc(100vh-80px)]">
+            {/* Email List Panel */}
+            <div className="w-96 bg-white/60 backdrop-blur-sm border-r border-slate-200">
+              {isLoading ? (
+                <div className="flex flex-col items-center justify-center h-full">
+                  <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
+                  <p className="text-slate-600">Loading emails...</p>
+                </div>
+              ) : error ? (
+                <div className="flex flex-col items-center justify-center h-full p-6">
+                  <AlertCircle className="w-12 h-12 text-red-500 mb-4" />
+                  <p className="text-slate-800 font-medium mb-2">Error loading emails</p>
+                  <p className="text-slate-600 mb-4 text-center">{error}</p>
+                  <button 
+                    onClick={() => refetch()} 
+                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                  >
+                    Try Again
+                  </button>
+                </div>
+              ) : (
+                <EmailList 
+                  emails={emails} 
+                  onEmailSelect={handleEmailSelect}
+                  selectedEmail={selectedEmail}
+                />
+              )}
             </div>
+
+            {/* Email Detail Panel */}
+            <div className="flex-1 bg-white/40 backdrop-blur-sm">
+              {selectedEmail ? (
+                <EmailDetail 
+                  email={selectedEmail} 
+                  onReply={() => setReplyTo(selectedEmail)}
+                />
+              ) : (
+                <div className="h-full flex items-center justify-center">
+                  <div className="text-center text-slate-500">
+                    <Mail className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                    <h3 className="text-lg font-medium mb-2">Select an email</h3>
+                    <p className="text-sm">Choose an email from the list to view details</p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Task Panel */}
+            <div className="w-80 bg-white/60 backdrop-blur-sm border-l border-slate-200">
+              <TaskPanel 
+                tasks={tasks}
+                emails={emails}
+                onTaskComplete={handleTaskComplete}
+                onTaskDelete={handleTaskDelete}
+                onTaskPriorityChange={handleTaskPriorityChange}
+                onEmailSelect={handleEmailSelect}
+              />
+            </div>
+          </div>
+
+          {/* Reply Interface */}
+          {replyTo && (
+            <ReplyInterface 
+              email={replyTo}
+              onSend={handleSendReply}
+              onCancel={() => setReplyTo(null)}
+            />
           )}
+        </>
+      ) : (
+        <div className="h-[calc(100vh-80px)] flex flex-col items-center justify-center p-8">
+          <div className="w-20 h-20 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full flex items-center justify-center mb-6">
+            <Mail className="w-10 h-10 text-white" />
+          </div>
+          
+          <h2 className="text-2xl font-bold text-slate-800 mb-4">
+            Connect to Gmail to get started
+          </h2>
+          
+          <p className="text-slate-600 max-w-md text-center mb-8">
+            Saha needs to connect to your Gmail account to fetch emails, generate summaries, and extract tasks.
+          </p>
+          
+          <Link
+            to="/settings"
+            className="flex items-center space-x-3 px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+          >
+            <Mail className="w-5 h-5" />
+            <span>Go to Settings</span>
+          </Link>
         </div>
-
-        {/* Task Panel */}
-        <div className="w-80 bg-white/60 backdrop-blur-sm border-l border-slate-200">
-          <TaskPanel 
-            tasks={tasks}
-            emails={emails}
-            onTaskComplete={handleTaskComplete}
-            onTaskDelete={handleTaskDelete}
-            onTaskPriorityChange={handleTaskPriorityChange}
-            onEmailSelect={handleEmailSelect}
-          />
-        </div>
-      </div>
-
-      {/* Reply Interface */}
-      {replyTo && (
-        <ReplyInterface 
-          email={replyTo}
-          onSend={handleSendReply}
-          onCancel={() => setReplyTo(null)}
-        />
       )}
     </div>
   );

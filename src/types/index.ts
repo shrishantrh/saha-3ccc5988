@@ -21,3 +21,9 @@ export interface Task {
   completed: boolean;
   daysLeft: number;
 }
+
+export interface GmailAuth {
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  error: string | null;
+}
