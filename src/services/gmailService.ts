@@ -8,7 +8,7 @@ const SCOPES = [
 ];
 
 // Google OAuth client ID - this should be obtained from Google Cloud Console
-const CLIENT_ID = ''; // User will need to fill this in
+const CLIENT_ID = '881935451747-qhc9n0jtlpe206rb2ri50kaajsl196hp.apps.googleusercontent.com';
 const REDIRECT_URI = window.location.origin;
 
 export const gmailService = {
