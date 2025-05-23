@@ -109,18 +109,18 @@ const Settings = () => {
               <li>
                 <strong>Enable the Gmail API:</strong>
                 <ul className="mt-2">
-                  <li>In your project, navigate to "APIs & Services" > "Library"</li>
-                  <li>Search for "Gmail API" and enable it</li>
+                  <li>In your project, navigate to &quot;APIs &amp; Services&quot; &gt; &quot;Library&quot;</li>
+                  <li>Search for &quot;Gmail API&quot; and enable it</li>
                 </ul>
               </li>
               
               <li>
                 <strong>Configure OAuth Consent Screen:</strong>
                 <ul className="mt-2">
-                  <li>Go to "APIs & Services" > "OAuth consent screen"</li>
-                  <li>Select "External" user type and create</li>
+                  <li>Go to &quot;APIs &amp; Services&quot; &gt; &quot;OAuth consent screen&quot;</li>
+                  <li>Select &quot;External&quot; user type and create</li>
                   <li>Fill in the required fields (App name, support email)</li>
-                  <li>Add authorized domains (your app's domain)</li>
+                  <li>Add authorized domains (your app&apos;s domain)</li>
                   <li>Add scopes for Gmail API:
                     <ul>
                       <li>https://www.googleapis.com/auth/gmail.readonly</li>
@@ -133,9 +133,9 @@ const Settings = () => {
               <li>
                 <strong>Create OAuth Credentials:</strong>
                 <ul className="mt-2">
-                  <li>Go to "APIs & Services" > "Credentials"</li>
-                  <li>Click "Create Credentials" > "OAuth client ID"</li>
-                  <li>Select "Web application" as application type</li>
+                  <li>Go to &quot;APIs &amp; Services&quot; &gt; &quot;Credentials&quot;</li>
+                  <li>Click &quot;Create Credentials&quot; &gt; &quot;OAuth client ID&quot;</li>
+                  <li>Select &quot;Web application&quot; as application type</li>
                   <li>Add authorized JavaScript origins:
                     <ul>
                       <li>http://localhost:8080 (for development)</li>
@@ -143,7 +143,7 @@ const Settings = () => {
                     </ul>
                   </li>
                   <li>Add authorized redirect URIs (same as origins)</li>
-                  <li>Click "Create" and copy your Client ID</li>
+                  <li>Click &quot;Create&quot; and copy your Client ID</li>
                 </ul>
               </li>
               
