@@ -1,4 +1,3 @@
-
 interface GroqMessage {
   role: 'system' | 'user' | 'assistant';
   content: string;
@@ -20,6 +19,21 @@ interface EmailSummary {
     title: string;
     dueDate: string;
     priority: 'low' | 'medium' | 'high';
+  }>;
+}
+
+interface EmailContext {
+  subject: string;
+  sender: string;
+  timestamp: string;
+  snippet: string;
+  category: string;
+  priority: string;
+  summary: string;
+  tasks: Array<{
+    title: string;
+    dueDate: string;
+    priority: string;
   }>;
 }
 
@@ -147,6 +161,48 @@ Generate a helpful, professional reply. Keep it concise and appropriate to the c
     } catch (error) {
       console.error('Error generating reply with Groq:', error);
       return 'Thank you for your email. I will review it and get back to you soon.';
+    }
+  }
+
+  async searchEmails(query: string, emailContext: EmailContext[]): Promise<string> {
+    const contextString = emailContext.map(email => {
+      const tasksString = email.tasks.length > 0 
+        ? `\n  Tasks: ${email.tasks.map(task => `"${task.title}" (due: ${task.dueDate}, priority: ${task.priority})`).join(', ')}`
+        : '';
+      
+      return `- Subject: "${email.subject}"
+  From: ${email.sender}
+  Time: ${email.timestamp}
+  Category: ${email.category}
+  Priority: ${email.priority}
+  Summary: ${email.summary}${tasksString}`;
+    }).join('\n\n');
+
+    const prompt = `You are an AI assistant that helps users find information from their emails. Based on the user's question and the email context provided, give a helpful and accurate answer.
+
+User's question: "${query}"
+
+Email context:
+${contextString}
+
+Please provide a helpful answer based on the available email information. If you can't find relevant information in the emails, let the user know. Be specific and reference the emails when possible (e.g., "According to the email from..." or "Based on your email about...").`;
+
+    const messages: GroqMessage[] = [
+      {
+        role: 'system',
+        content: 'You are a helpful AI assistant that searches through email data to answer user questions. Be conversational, helpful, and specific in your responses.'
+      },
+      {
+        role: 'user',
+        content: prompt
+      }
+    ];
+
+    try {
+      return await this.makeRequest(messages);
+    } catch (error) {
+      console.error('Error searching emails with Groq:', error);
+      return 'Sorry, I encountered an error while searching through your emails. Please try again.';
     }
   }
 }

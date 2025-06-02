@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Mail, Clock, AlertCircle, CheckCircle, X, MoreHorizontal, Settings as SettingsIcon } from 'lucide-react';
+import { Mail, Clock, AlertCircle, CheckCircle, X, MoreHorizontal, Settings as SettingsIcon, MessageCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import EmailList from '../components/EmailList';
 import EmailDetail from '../components/EmailDetail';
 import TaskPanel from '../components/TaskPanel';
 import ReplyInterface from '../components/ReplyInterface';
+import EmailChat from '../components/EmailChat';
 import { Email, Task } from '../types';
 import { useGmailAuth } from '../hooks/useGmailAuth';
 import { useGmailEmails } from '../hooks/useGmailEmails';
@@ -89,6 +90,7 @@ const Index = () => {
   const [emails, setEmails] = useState<Email[]>(mockEmails);
   const [tasks, setTasks] = useState<Task[]>(mockTasks);
   const [replyTo, setReplyTo] = useState<Email | null>(null);
+  const [isChatOpen, setIsChatOpen] = useState(false);
 
   // Update emails and tasks when Gmail emails change
   useEffect(() => {
@@ -186,6 +188,16 @@ const Index = () => {
               </div>
             )}
 
+            {isGroqConnected && (
+              <button
+                onClick={() => setIsChatOpen(true)}
+                className="p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-full transition-colors"
+                title="AI Chat"
+              >
+                <MessageCircle className="w-5 h-5" />
+              </button>
+            )}
+
             <Link 
               to="/settings" 
               className="p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-full transition-colors"
@@ -271,6 +283,14 @@ const Index = () => {
               onCancel={() => setReplyTo(null)}
             />
           )}
+
+          {/* AI Chat Interface */}
+          <EmailChat
+            groqService={groqService}
+            emails={emails}
+            isOpen={isChatOpen}
+            onClose={() => setIsChatOpen(false)}
+          />
         </>
       ) : (
         <div className="h-[calc(100vh-80px)] flex flex-col items-center justify-center p-8">
