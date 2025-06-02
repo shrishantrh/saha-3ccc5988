@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Mail, Clock, AlertCircle, CheckCircle, X, MoreHorizontal, Settings as SettingsIcon } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -84,28 +83,27 @@ const mockTasks: Task[] = [
 const Index = () => {
   const { isAuthenticated } = useGmailAuth();
   const { service: groqService, isValidated: isGroqConnected } = useGroqIntegration();
-  const { emails: gmailEmails, isLoading, error, refetch } = useGmailEmails(groqService);
+  const { emails: gmailEmails, tasks: aiTasks, isLoading, error, refetch } = useGmailEmails(groqService);
   
   const [selectedEmail, setSelectedEmail] = useState<Email | null>(null);
   const [emails, setEmails] = useState<Email[]>(mockEmails);
   const [tasks, setTasks] = useState<Task[]>(mockTasks);
   const [replyTo, setReplyTo] = useState<Email | null>(null);
 
-  // Update emails when Gmail emails change
+  // Update emails and tasks when Gmail emails change
   useEffect(() => {
     if (isAuthenticated && gmailEmails.length > 0) {
       setEmails(gmailEmails);
       // Clear selection when emails change
       setSelectedEmail(null);
       
-      // Extract tasks from AI-analyzed emails if Groq is connected
-      if (isGroqConnected && groqService) {
-        // This would normally be done in the email analysis, but we'll handle it here for now
-        // In a real implementation, tasks would be extracted during email analysis
-        console.log('Emails loaded with AI analysis, tasks would be extracted here');
+      // Use AI-generated tasks if available, otherwise fallback to mock
+      if (isGroqConnected && aiTasks.length > 0) {
+        setTasks(aiTasks);
+        console.log('Using AI-generated tasks:', aiTasks.length);
       }
     }
-  }, [isAuthenticated, gmailEmails, isGroqConnected, groqService]);
+  }, [isAuthenticated, gmailEmails, aiTasks, isGroqConnected]);
 
   const handleEmailSelect = (email: Email) => {
     setSelectedEmail(email);

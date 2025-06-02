@@ -10,6 +10,16 @@ export interface Email {
   timestamp: string;
   priority: 'low' | 'medium' | 'high';
   read: boolean;
+  aiAnalysis?: {
+    summary: string;
+    category: string;
+    priority: 'low' | 'medium' | 'high';
+    tasks: Array<{
+      title: string;
+      dueDate: string;
+      priority: 'low' | 'medium' | 'high';
+    }>;
+  };
 }
 
 export interface Task {

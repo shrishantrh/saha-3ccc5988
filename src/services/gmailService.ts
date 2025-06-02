@@ -131,6 +131,7 @@ export const gmailService = {
           let summary = 'No summary available';
           let category = 'Personal';
           let priority: 'low' | 'medium' | 'high' = 'medium';
+          let aiAnalysis = undefined;
           
           if (groqService && body.trim()) {
             try {
@@ -139,6 +140,14 @@ export const gmailService = {
               summary = analysis.summary;
               category = analysis.category;
               priority = analysis.priority;
+              
+              // Store full AI analysis for task extraction
+              aiAnalysis = {
+                summary: analysis.summary,
+                category: analysis.category,
+                priority: analysis.priority,
+                tasks: analysis.tasks
+              };
             } catch (error) {
               console.error('Error analyzing email:', error);
             }
@@ -175,7 +184,8 @@ export const gmailService = {
             summary,
             timestamp,
             priority,
-            read: false
+            read: false,
+            aiAnalysis
           };
         })
       );
