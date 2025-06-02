@@ -3,6 +3,7 @@ import React from 'react';
 import { useGmailAuth } from '../hooks/useGmailAuth';
 import { ArrowLeft, Mail, CheckCircle, AlertCircle, LogOut } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import GroqApiKeySettings from '../components/GroqApiKeySettings';
 
 const Settings = () => {
   const { isAuthenticated, isLoading, error, login, logout } = useGmailAuth();
@@ -23,8 +24,9 @@ const Settings = () => {
       </header>
 
       {/* Main Content */}
-      <div className="max-w-3xl">
-        <div className="bg-white shadow-md rounded-lg p-6 mb-6">
+      <div className="max-w-3xl space-y-6">
+        {/* Gmail Connection */}
+        <div className="bg-white shadow-md rounded-lg p-6">
           <h2 className="text-xl font-semibold text-slate-800 mb-4">
             Gmail Connection
           </h2>
@@ -75,25 +77,17 @@ const Settings = () => {
                 <Mail className="w-5 h-5" />
                 <span>Connect to Gmail</span>
               </button>
-              
-              <div className="mt-4 text-xs text-slate-500">
-                <p>
-                  Before connecting, make sure to:
-                </p>
-                <ol className="list-decimal list-inside space-y-1 mt-2">
-                  <li>Set up a Google Cloud project</li>
-                  <li>Enable Gmail API</li>
-                  <li>Create OAuth 2.0 credentials</li>
-                  <li>Update the CLIENT_ID value in the application</li>
-                </ol>
-              </div>
             </div>
           )}
         </div>
+
+        {/* Groq API Settings */}
+        <GroqApiKeySettings />
         
+        {/* Setup Instructions */}
         <div className="bg-white shadow-md rounded-lg p-6">
           <h2 className="text-xl font-semibold text-slate-800 mb-4">
-            Setup Instructions
+            Gmail Setup Instructions
           </h2>
           
           <div className="prose prose-slate max-w-none">
@@ -151,7 +145,7 @@ const Settings = () => {
                 <strong>Update Your Application:</strong>
                 <ul className="mt-2">
                   <li>Open src/services/gmailService.ts</li>
-                  <li>Replace the empty CLIENT_ID value with your OAuth client ID</li>
+                  <li>Replace the CLIENT_ID value with your OAuth client ID</li>
                 </ul>
               </li>
             </ol>

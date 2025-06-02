@@ -2,8 +2,9 @@
 import { useEffect, useState } from 'react';
 import { Email } from '../types';
 import { gmailService } from '../services/gmailService';
+import { GroqService } from '../services/groqService';
 
-export const useGmailEmails = () => {
+export const useGmailEmails = (groqService?: GroqService) => {
   const [emails, setEmails] = useState<Email[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -18,7 +19,8 @@ export const useGmailEmails = () => {
     setError(null);
     
     try {
-      const fetchedEmails = await gmailService.fetchEmails();
+      console.log('Fetching emails with Groq service:', !!groqService);
+      const fetchedEmails = await gmailService.fetchEmails(groqService);
       setEmails(fetchedEmails);
     } catch (err: any) {
       setError(err.message);
@@ -32,7 +34,7 @@ export const useGmailEmails = () => {
     if (gmailService.checkAuth()) {
       fetchEmails();
     }
-  }, []);
+  }, [groqService]); // Re-fetch when groqService changes
   
   // Return data and refetch function
   return {

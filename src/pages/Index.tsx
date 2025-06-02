@@ -9,6 +9,7 @@ import ReplyInterface from '../components/ReplyInterface';
 import { Email, Task } from '../types';
 import { useGmailAuth } from '../hooks/useGmailAuth';
 import { useGmailEmails } from '../hooks/useGmailEmails';
+import { useGroqIntegration } from '../hooks/useGroqIntegration';
 
 // Mock data for demonstration when not connected to Gmail
 const mockEmails: Email[] = [
@@ -82,7 +83,8 @@ const mockTasks: Task[] = [
 
 const Index = () => {
   const { isAuthenticated } = useGmailAuth();
-  const { emails: gmailEmails, isLoading, error, refetch } = useGmailEmails();
+  const { service: groqService, isValidated: isGroqConnected } = useGroqIntegration();
+  const { emails: gmailEmails, isLoading, error, refetch } = useGmailEmails(groqService);
   
   const [selectedEmail, setSelectedEmail] = useState<Email | null>(null);
   const [emails, setEmails] = useState<Email[]>(mockEmails);
@@ -95,8 +97,15 @@ const Index = () => {
       setEmails(gmailEmails);
       // Clear selection when emails change
       setSelectedEmail(null);
+      
+      // Extract tasks from AI-analyzed emails if Groq is connected
+      if (isGroqConnected && groqService) {
+        // This would normally be done in the email analysis, but we'll handle it here for now
+        // In a real implementation, tasks would be extracted during email analysis
+        console.log('Emails loaded with AI analysis, tasks would be extracted here');
+      }
     }
-  }, [isAuthenticated, gmailEmails]);
+  }, [isAuthenticated, gmailEmails, isGroqConnected, groqService]);
 
   const handleEmailSelect = (email: Email) => {
     setSelectedEmail(email);
@@ -130,10 +139,10 @@ const Index = () => {
     }));
   };
 
-  const handleSendReply = (message: string) => {
+  const handleSendReply = async (message: string) => {
     if (replyTo) {
       console.log(`Sending reply to ${replyTo.sender}: ${message}`);
-      // Here you would integrate with Gmail API
+      // Here you would integrate with Gmail API for sending
       setReplyTo(null);
     }
   };
@@ -167,6 +176,18 @@ const Index = () => {
               </div>
             )}
 
+            {isGroqConnected ? (
+              <div className="flex items-center space-x-1">
+                <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                <span>AI Active</span>
+              </div>
+            ) : (
+              <div className="flex items-center space-x-1">
+                <div className="w-2 h-2 bg-red-400 rounded-full"></div>
+                <span>AI Disabled</span>
+              </div>
+            )}
+
             <Link 
               to="/settings" 
               className="p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-full transition-colors"
@@ -188,6 +209,9 @@ const Index = () => {
                 <div className="flex flex-col items-center justify-center h-full">
                   <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
                   <p className="text-slate-600">Loading emails...</p>
+                  {isGroqConnected && (
+                    <p className="text-xs text-slate-500 mt-2">Analyzing with AI...</p>
+                  )}
                 </div>
               ) : error ? (
                 <div className="flex flex-col items-center justify-center h-full p-6">
