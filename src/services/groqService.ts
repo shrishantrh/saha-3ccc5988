@@ -46,6 +46,8 @@ export class GroqService {
   }
 
   private async makeRequest(messages: GroqMessage[]): Promise<string> {
+    console.log('Making Groq API request with', messages.length, 'messages');
+    
     const response = await fetch(this.baseUrl, {
       method: 'POST',
       headers: {
@@ -60,12 +62,16 @@ export class GroqService {
       }),
     });
 
+    console.log('Groq API response status:', response.status);
+
     if (!response.ok) {
       const error = await response.text();
+      console.error('Groq API error response:', error);
       throw new Error(`Groq API error: ${response.status} - ${error}`);
     }
 
     const data: GroqResponse = await response.json();
+    console.log('Groq API response data received');
     return data.choices[0]?.message?.content || '';
   }
 
@@ -165,44 +171,61 @@ Generate a helpful, professional reply. Keep it concise and appropriate to the c
   }
 
   async searchEmails(query: string, emailContext: EmailContext[]): Promise<string> {
-    const contextString = emailContext.map(email => {
-      const tasksString = email.tasks.length > 0 
-        ? `\n  Tasks: ${email.tasks.map(task => `"${task.title}" (due: ${task.dueDate}, priority: ${task.priority})`).join(', ')}`
-        : '';
-      
-      return `- Subject: "${email.subject}"
-  From: ${email.sender}
-  Time: ${email.timestamp}
-  Category: ${email.category}
-  Priority: ${email.priority}
-  Summary: ${email.summary}${tasksString}`;
-    }).join('\n\n');
+    console.log('searchEmails called with query:', query);
+    console.log('Email context length:', emailContext.length);
 
-    const prompt = `You are an AI assistant that helps users find information from their emails. Based on the user's question and the email context provided, give a helpful and accurate answer.
+    try {
+      // Limit context to prevent API issues
+      const limitedContext = emailContext.slice(0, 15);
+      
+      const contextString = limitedContext.map((email, index) => {
+        const tasksString = email.tasks.length > 0 
+          ? `\n  Tasks: ${email.tasks.map(task => `"${task.title}" (due: ${task.dueDate}, priority: ${task.priority})`).join(', ')}`
+          : '';
+        
+        return `${index + 1}. Subject: "${email.subject}"
+   From: ${email.sender}
+   Time: ${email.timestamp}
+   Category: ${email.category}
+   Priority: ${email.priority}
+   Summary: ${email.summary}${tasksString}`;
+      }).join('\n\n');
+
+      console.log('Context string length:', contextString.length);
+
+      // Ensure the prompt isn't too long
+      const prompt = `You are an AI assistant that helps users find information from their emails. Based on the user's question and the email context provided, give a helpful and accurate answer.
 
 User's question: "${query}"
 
-Email context:
+Email context (${limitedContext.length} emails):
 ${contextString}
 
-Please provide a helpful answer based on the available email information. If you can't find relevant information in the emails, let the user know. Be specific and reference the emails when possible (e.g., "According to the email from..." or "Based on your email about...").`;
+Please provide a helpful answer based on the available email information. If you can't find relevant information in the emails, let the user know. Be specific and reference the emails when possible.`;
 
-    const messages: GroqMessage[] = [
-      {
-        role: 'system',
-        content: 'You are a helpful AI assistant that searches through email data to answer user questions. Be conversational, helpful, and specific in your responses.'
-      },
-      {
-        role: 'user',
-        content: prompt
-      }
-    ];
+      const messages: GroqMessage[] = [
+        {
+          role: 'system',
+          content: 'You are a helpful AI assistant that searches through email data to answer user questions. Be conversational, helpful, and specific in your responses.'
+        },
+        {
+          role: 'user',
+          content: prompt
+        }
+      ];
 
-    try {
-      return await this.makeRequest(messages);
+      console.log('Making API request...');
+      const response = await this.makeRequest(messages);
+      console.log('API request successful, response length:', response.length);
+      
+      return response;
     } catch (error) {
-      console.error('Error searching emails with Groq:', error);
-      return 'Sorry, I encountered an error while searching through your emails. Please try again.';
+      console.error('Error in searchEmails method:', error);
+      console.error('Error details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : 'No stack trace'
+      });
+      throw error; // Re-throw to be handled by the calling code
     }
   }
 }

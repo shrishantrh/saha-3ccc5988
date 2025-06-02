@@ -28,19 +28,25 @@ export const useEmailChat = (groqService: GroqService | null, emails: Email[]) =
     setIsLoading(true);
 
     try {
-      // Prepare email context for the AI
-      const emailContext = emails.map(email => ({
+      console.log('Starting email search with message:', userMessage);
+      console.log('Number of emails to search:', emails.length);
+      
+      // Prepare email context for the AI - limit to prevent API issues
+      const emailContext = emails.slice(0, 20).map(email => ({
         subject: email.subject,
         sender: email.sender,
         timestamp: email.timestamp,
         snippet: email.snippet,
-        category: email.category,
-        priority: email.priority,
-        summary: email.summary,
+        category: email.category || 'Personal',
+        priority: email.priority || 'medium',
+        summary: email.summary || 'No summary available',
         tasks: email.aiAnalysis?.tasks || []
       }));
 
+      console.log('Email context prepared:', emailContext.length, 'emails');
+
       const response = await groqService.searchEmails(userMessage, emailContext);
+      console.log('Groq API response received:', response.substring(0, 100) + '...');
 
       const assistantMessage: ChatMessage = {
         id: crypto.randomUUID(),
@@ -51,12 +57,14 @@ export const useEmailChat = (groqService: GroqService | null, emails: Email[]) =
 
       setMessages(prev => [...prev, assistantMessage]);
     } catch (error) {
-      console.error('Error sending chat message:', error);
+      console.error('Detailed error in email chat:', error);
+      console.error('Error type:', typeof error);
+      console.error('Error message:', error instanceof Error ? error.message : 'Unknown error');
       
       const errorMessage: ChatMessage = {
         id: crypto.randomUUID(),
         role: 'assistant',
-        content: 'Sorry, I encountered an error while searching through your emails. Please try again.',
+        content: `I encountered an error while searching your emails: ${error instanceof Error ? error.message : 'Unknown error'}. Please check your Groq API connection and try again.`,
         timestamp: new Date()
       };
 
