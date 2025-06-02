@@ -8,6 +8,7 @@ interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
   timestamp: Date;
+  isRetrying?: boolean;
 }
 
 export const useEmailChat = (groqService: GroqService | null, emails: Email[]) => {
@@ -61,10 +62,22 @@ export const useEmailChat = (groqService: GroqService | null, emails: Email[]) =
       console.error('Error type:', typeof error);
       console.error('Error message:', error instanceof Error ? error.message : 'Unknown error');
       
+      let errorContent = 'I encountered an error while searching your emails. Please try again.';
+      
+      if (error instanceof Error) {
+        if (error.message.includes('Rate limit exceeded')) {
+          errorContent = 'I hit the API rate limit. Please wait a moment and try again. The system will automatically retry when ready.';
+        } else if (error.message.includes('429')) {
+          errorContent = 'API rate limit reached. Please wait about 30-60 seconds before trying again.';
+        } else {
+          errorContent = `I encountered an error: ${error.message}. Please check your Groq API connection and try again.`;
+        }
+      }
+      
       const errorMessage: ChatMessage = {
         id: crypto.randomUUID(),
         role: 'assistant',
-        content: `I encountered an error while searching your emails: ${error instanceof Error ? error.message : 'Unknown error'}. Please check your Groq API connection and try again.`,
+        content: errorContent,
         timestamp: new Date()
       };
 

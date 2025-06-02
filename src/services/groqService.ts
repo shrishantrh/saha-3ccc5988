@@ -37,6 +37,14 @@ interface EmailContext {
   }>;
 }
 
+interface RateLimitError {
+  error: {
+    message: string;
+    type: string;
+    code: string;
+  };
+}
+
 export class GroqService {
   private apiKey: string;
   private baseUrl = 'https://api.groq.com/openai/v1/chat/completions';
@@ -45,34 +53,83 @@ export class GroqService {
     this.apiKey = apiKey;
   }
 
-  private async makeRequest(messages: GroqMessage[]): Promise<string> {
+  private extractRetryDelay(errorMessage: string): number {
+    // Extract retry delay from error message like "Please try again in 39.243s"
+    const retryMatch = errorMessage.match(/try again in ([\d.]+)s/);
+    if (retryMatch) {
+      const seconds = parseFloat(retryMatch[1]);
+      return Math.ceil(seconds * 1000); // Convert to milliseconds and round up
+    }
+    return 30000; // Default to 30 seconds if we can't parse
+  }
+
+  private async makeRequest(messages: GroqMessage[], maxRetries: number = 2): Promise<string> {
     console.log('Making Groq API request with', messages.length, 'messages');
     
-    const response = await fetch(this.baseUrl, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${this.apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'llama3-8b-8192',
-        messages,
-        temperature: 0.3,
-        max_tokens: 1000,
-      }),
-    });
+    for (let attempt = 1; attempt <= maxRetries + 1; attempt++) {
+      try {
+        const response = await fetch(this.baseUrl, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${this.apiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: 'llama3-8b-8192',
+            messages,
+            temperature: 0.3,
+            max_tokens: 1000,
+          }),
+        });
 
-    console.log('Groq API response status:', response.status);
+        console.log(`Groq API response status (attempt ${attempt}):`, response.status);
 
-    if (!response.ok) {
-      const error = await response.text();
-      console.error('Groq API error response:', error);
-      throw new Error(`Groq API error: ${response.status} - ${error}`);
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('Groq API error response:', errorText);
+          
+          // Handle rate limit specifically
+          if (response.status === 429) {
+            try {
+              const errorData: RateLimitError = JSON.parse(errorText);
+              const isRateLimit = errorData.error?.code === 'rate_limit_exceeded';
+              
+              if (isRateLimit && attempt <= maxRetries) {
+                const retryDelay = this.extractRetryDelay(errorData.error.message);
+                console.log(`Rate limit hit, retrying in ${retryDelay}ms (attempt ${attempt}/${maxRetries + 1})`);
+                
+                // Wait for the specified delay
+                await new Promise(resolve => setTimeout(resolve, retryDelay));
+                continue; // Retry the request
+              }
+            } catch (parseError) {
+              console.error('Failed to parse rate limit error:', parseError);
+            }
+          }
+          
+          throw new Error(`Groq API error: ${response.status} - ${errorText}`);
+        }
+
+        const data: GroqResponse = await response.json();
+        console.log('Groq API response data received successfully');
+        return data.choices[0]?.message?.content || '';
+        
+      } catch (error) {
+        if (attempt === maxRetries + 1) {
+          // This was our last attempt, throw the error
+          throw error;
+        }
+        
+        console.log(`Request failed on attempt ${attempt}, will retry:`, error);
+        
+        // For non-rate-limit errors, wait a shorter time before retry
+        if (attempt <= maxRetries) {
+          await new Promise(resolve => setTimeout(resolve, 2000));
+        }
+      }
     }
-
-    const data: GroqResponse = await response.json();
-    console.log('Groq API response data received');
-    return data.choices[0]?.message?.content || '';
+    
+    throw new Error('All retry attempts failed');
   }
 
   async analyzeEmail(subject: string, body: string, sender: string): Promise<EmailSummary> {
@@ -175,8 +232,8 @@ Generate a helpful, professional reply. Keep it concise and appropriate to the c
     console.log('Email context length:', emailContext.length);
 
     try {
-      // Limit context to prevent API issues
-      const limitedContext = emailContext.slice(0, 15);
+      // Limit context to prevent API issues - reduce further for rate limits
+      const limitedContext = emailContext.slice(0, 10);
       
       const contextString = limitedContext.map((email, index) => {
         const tasksString = email.tasks.length > 0 
@@ -193,20 +250,20 @@ Generate a helpful, professional reply. Keep it concise and appropriate to the c
 
       console.log('Context string length:', contextString.length);
 
-      // Ensure the prompt isn't too long
-      const prompt = `You are an AI assistant that helps users find information from their emails. Based on the user's question and the email context provided, give a helpful and accurate answer.
+      // Keep prompt shorter to avoid hitting rate limits
+      const prompt = `Based on the user's question and email context, provide a helpful answer.
 
-User's question: "${query}"
+Question: "${query}"
 
-Email context (${limitedContext.length} emails):
+Emails (${limitedContext.length} most recent):
 ${contextString}
 
-Please provide a helpful answer based on the available email information. If you can't find relevant information in the emails, let the user know. Be specific and reference the emails when possible.`;
+Answer based on the available information. Be specific and reference emails when possible.`;
 
       const messages: GroqMessage[] = [
         {
           role: 'system',
-          content: 'You are a helpful AI assistant that searches through email data to answer user questions. Be conversational, helpful, and specific in your responses.'
+          content: 'You are a helpful AI assistant that searches email data to answer questions. Be conversational and specific.'
         },
         {
           role: 'user',
@@ -214,18 +271,20 @@ Please provide a helpful answer based on the available email information. If you
         }
       ];
 
-      console.log('Making API request...');
+      console.log('Making API request with retry logic...');
       const response = await this.makeRequest(messages);
       console.log('API request successful, response length:', response.length);
       
       return response;
     } catch (error) {
       console.error('Error in searchEmails method:', error);
-      console.error('Error details:', {
-        message: error instanceof Error ? error.message : 'Unknown error',
-        stack: error instanceof Error ? error.stack : 'No stack trace'
-      });
-      throw error; // Re-throw to be handled by the calling code
+      
+      // Check if it's still a rate limit error after retries
+      if (error instanceof Error && error.message.includes('429')) {
+        throw new Error('Rate limit exceeded. Please wait a moment before trying again.');
+      }
+      
+      throw error;
     }
   }
 }
