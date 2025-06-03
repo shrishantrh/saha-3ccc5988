@@ -1,202 +1,243 @@
-import { Email } from "../types";
-import { GeminiService } from "./geminiService";
 
-// Scope for Gmail API
-const SCOPES = [
-  'https://www.googleapis.com/auth/gmail.readonly',
-  'https://www.googleapis.com/auth/gmail.send'
-];
+interface GmailMessage {
+  id: string;
+  threadId: string;
+  snippet: string;
+  payload: {
+    headers: Array<{ name: string; value: string }>;
+    body?: { data?: string };
+    parts?: Array<{
+      mimeType: string;
+      body?: { data?: string };
+      parts?: Array<{ mimeType: string; body?: { data?: string } }>;
+    }>;
+  };
+  internalDate: string;
+}
 
-// Google OAuth client ID - this should be obtained from Google Cloud Console
-const CLIENT_ID = '881935451747-qhc9n0jtlpe206rb2ri50kaajsl196hp.apps.googleusercontent.com';
-const REDIRECT_URI = window.location.origin;
+interface GmailListResponse {
+  messages: Array<{ id: string; threadId: string }>;
+  nextPageToken?: string;
+}
 
-export const gmailService = {
-  // Initiate Google OAuth login
-  login: () => {
-    // Create OAuth URL
-    const authUrl = new URL('https://accounts.google.com/o/oauth2/v2/auth');
-    authUrl.searchParams.append('client_id', CLIENT_ID);
-    authUrl.searchParams.append('redirect_uri', REDIRECT_URI);
-    authUrl.searchParams.append('response_type', 'token');
-    authUrl.searchParams.append('scope', SCOPES.join(' '));
-    
-    // Redirect to Google login
-    window.location.href = authUrl.toString();
-  },
-  
-  // Check if we have a valid auth token
-  checkAuth: (): boolean => {
-    const params = new URLSearchParams(window.location.hash.substring(1));
-    const token = params.get('access_token');
-    const expiresIn = params.get('expires_in');
-    
-    if (token) {
-      // Store token in localStorage
-      localStorage.setItem('gmail_token', token);
-      localStorage.setItem('gmail_token_expiry', 
-        (Date.now() + (parseInt(expiresIn || '0') * 1000)).toString());
-      // Remove hash from URL
-      window.history.replaceState({}, document.title, window.location.pathname);
-      return true;
+class GmailService {
+  private accessToken: string | null = null;
+  private readonly CLIENT_ID = 'YOUR_GMAIL_CLIENT_ID'; // Replace with your actual client ID
+
+  async initialize() {
+    // Load Google APIs
+    if (!window.gapi) {
+      await this.loadGoogleAPIs();
     }
     
-    // Check if token exists and is not expired
-    const storedToken = localStorage.getItem('gmail_token');
-    const tokenExpiry = localStorage.getItem('gmail_token_expiry');
-    
-    if (storedToken && tokenExpiry && parseInt(tokenExpiry) > Date.now()) {
-      return true;
+    await gapi.load('auth2', () => {
+      gapi.auth2.init({
+        client_id: this.CLIENT_ID,
+      });
+    });
+  }
+
+  private loadGoogleAPIs(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = 'https://apis.google.com/js/api.js';
+      script.onload = () => resolve();
+      script.onerror = () => reject(new Error('Failed to load Google APIs'));
+      document.head.appendChild(script);
+    });
+  }
+
+  async login(): Promise<void> {
+    try {
+      await this.initialize();
+      
+      const authInstance = gapi.auth2.getAuthInstance();
+      const user = await authInstance.signIn({
+        scope: 'https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.send'
+      });
+      
+      this.accessToken = user.getAuthResponse().access_token;
+      localStorage.setItem('gmail_access_token', this.accessToken);
+    } catch (error) {
+      throw new Error('Failed to authenticate with Gmail');
     }
-    
-    return false;
-  },
-  
-  // Get access token
-  getToken: (): string | null => {
-    return localStorage.getItem('gmail_token');
-  },
-  
-  // Logout - clear token
-  logout: () => {
-    localStorage.removeItem('gmail_token');
-    localStorage.removeItem('gmail_token_expiry');
-    window.location.reload();
-  },
-  
-  // Fetch emails with AI analysis
-  fetchEmails: async (geminiService?: GeminiService): Promise<Email[]> => {
-    const token = gmailService.getToken();
-    if (!token) {
+  }
+
+  async logout(): Promise<void> {
+    try {
+      const authInstance = gapi.auth2.getAuthInstance();
+      await authInstance.signOut();
+      this.accessToken = null;
+      localStorage.removeItem('gmail_access_token');
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+  }
+
+  checkAuth(): boolean {
+    if (!this.accessToken) {
+      this.accessToken = localStorage.getItem('gmail_access_token');
+    }
+    return !!this.accessToken;
+  }
+
+  private async makeGmailRequest(endpoint: string): Promise<any> {
+    if (!this.accessToken) {
       throw new Error('Not authenticated');
     }
-    
+
+    const response = await fetch(`https://gmail.googleapis.com/gmail/v1/users/me/${endpoint}`, {
+      headers: {
+        'Authorization': `Bearer ${this.accessToken}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Gmail API error: ${response.status}`);
+    }
+
+    return response.json();
+  }
+
+  private decodeBase64(data: string): string {
     try {
-      // Fetch list of messages
-      const response = await fetch(
-        'https://www.googleapis.com/gmail/v1/users/me/messages?maxResults=15',
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`
+      return atob(data.replace(/-/g, '+').replace(/_/g, '/'));
+    } catch (error) {
+      return '';
+    }
+  }
+
+  private extractEmailBody(message: GmailMessage): string {
+    // Try to get the body from different parts of the message
+    const payload = message.payload;
+    
+    if (payload.body?.data) {
+      return this.decodeBase64(payload.body.data);
+    }
+    
+    if (payload.parts) {
+      for (const part of payload.parts) {
+        if (part.mimeType === 'text/plain' && part.body?.data) {
+          return this.decodeBase64(part.body.data);
+        }
+        
+        // Check nested parts
+        if (part.parts) {
+          for (const nestedPart of part.parts) {
+            if (nestedPart.mimeType === 'text/plain' && nestedPart.body?.data) {
+              return this.decodeBase64(nestedPart.body.data);
+            }
           }
         }
-      );
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch emails');
       }
+    }
+    
+    return message.snippet || '';
+  }
+
+  async fetchRawEmails(): Promise<Email[]> {
+    try {
+      console.log('Fetching email list...');
+      const listResponse: GmailListResponse = await this.makeGmailRequest('messages?maxResults=10&q=in:inbox');
       
-      const data = await response.json();
-      const messageIds = data.messages || [];
-      
-      // Fetch details for each message
-      const emails = await Promise.all(
-        messageIds.map(async (msg: { id: string }) => {
-          const msgResponse = await fetch(
-            `https://www.googleapis.com/gmail/v1/users/me/messages/${msg.id}?format=full`,
-            {
-              headers: {
-                'Authorization': `Bearer ${token}`
-              }
-            }
-          );
+      if (!listResponse.messages) {
+        return [];
+      }
+
+      console.log(`Found ${listResponse.messages.length} emails`);
+      const emails: Email[] = [];
+
+      for (const messageRef of listResponse.messages) {
+        try {
+          const message: GmailMessage = await this.makeGmailRequest(`messages/${messageRef.id}`);
           
-          if (!msgResponse.ok) {
-            throw new Error(`Failed to fetch email ${msg.id}`);
-          }
+          const headers = message.payload.headers;
+          const subject = headers.find(h => h.name === 'Subject')?.value || 'No Subject';
+          const from = headers.find(h => h.name === 'From')?.value || 'Unknown Sender';
+          const date = headers.find(h => h.name === 'Date')?.value || '';
           
-          const msgData = await msgResponse.json();
+          const body = this.extractEmailBody(message);
           
-          // Extract email info
-          const headers = msgData.payload.headers;
-          const subject = headers.find((h: {name: string}) => h.name === 'Subject')?.value || 'No Subject';
-          const sender = headers.find((h: {name: string}) => h.name === 'From')?.value || 'Unknown';
-          const dateHeader = headers.find((h: {name: string}) => h.name === 'Date')?.value;
-          
-          // Get email body
-          let body = '';
-          if (msgData.payload.parts && msgData.payload.parts.length > 0) {
-            const textPart = msgData.payload.parts.find(
-              (part: any) => part.mimeType === 'text/plain'
-            );
-            if (textPart && textPart.body.data) {
-              body = atob(textPart.body.data.replace(/-/g, '+').replace(/_/g, '/'));
-            }
-          } else if (msgData.payload.body && msgData.payload.body.data) {
-            body = atob(msgData.payload.body.data.replace(/-/g, '+').replace(/_/g, '/'));
-          }
-          
-          // Use AI analysis if Gemini service is available
-          let summary = 'No summary available';
-          let category = 'Personal';
-          let priority: 'low' | 'medium' | 'high' = 'medium';
-          let aiAnalysis = undefined;
-          
-          if (geminiService && body.trim()) {
-            try {
-              console.log(`Analyzing email: ${subject}`);
-              const analysis = await geminiService.analyzeEmail(subject, body, sender);
-              summary = analysis.summary;
-              category = analysis.category;
-              priority = analysis.priority;
-              
-              // Store full AI analysis including new fields
-              aiAnalysis = {
-                summary: analysis.summary,
-                category: analysis.category,
-                priority: analysis.priority,
-                tasks: analysis.tasks,
-                sentiment: analysis.sentiment,
-                urgency: analysis.urgency,
-                actionRequired: analysis.actionRequired,
-                estimatedResponseTime: analysis.estimatedResponseTime
-              };
-            } catch (error) {
-              console.error('Error analyzing email:', error);
-            }
-          }
-          
-          // Format timestamp
-          let timestamp = 'Unknown time';
-          if (dateHeader) {
-            try {
-              const date = new Date(dateHeader);
-              const now = new Date();
-              const diffHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
-              
-              if (diffHours < 1) {
-                timestamp = 'Just now';
-              } else if (diffHours < 24) {
-                timestamp = `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
-              } else {
-                const diffDays = Math.floor(diffHours / 24);
-                timestamp = `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
-              }
-            } catch (error) {
-              timestamp = dateHeader;
-            }
-          }
-          
-          return {
-            id: msg.id,
-            sender,
-            subject,
-            snippet: msgData.snippet || 'No preview available',
-            body,
-            category,
-            summary,
-            timestamp,
-            priority,
-            read: false,
-            aiAnalysis
+          const email: Email = {
+            id: message.id,
+            sender: from,
+            subject: subject,
+            snippet: message.snippet,
+            body: body,
+            category: 'Personal', // Will be updated by AI analysis
+            summary: 'Processing...', // Will be updated by AI analysis  
+            timestamp: this.formatDate(date),
+            priority: 'medium', // Will be updated by AI analysis
+            read: false // You can implement read status tracking
           };
-        })
-      );
-      
+
+          emails.push(email);
+        } catch (error) {
+          console.error(`Error fetching message ${messageRef.id}:`, error);
+        }
+      }
+
       return emails;
     } catch (error) {
       console.error('Error fetching emails:', error);
       throw error;
     }
   }
-};
+
+  // Legacy method for backwards compatibility - now uses fetchRawEmails + external AI analysis
+  async fetchEmails(geminiService?: any): Promise<Email[]> {
+    return this.fetchRawEmails();
+  }
+
+  private formatDate(dateString: string): string {
+    try {
+      const date = new Date(dateString);
+      const now = new Date();
+      const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60);
+
+      if (diffInHours < 1) {
+        return 'Just now';
+      } else if (diffInHours < 24) {
+        return `${Math.floor(diffInHours)} hours ago`;
+      } else {
+        const diffInDays = Math.floor(diffInHours / 24);
+        return `${diffInDays} day${diffInDays === 1 ? '' : 's'} ago`;
+      }
+    } catch {
+      return 'Unknown time';
+    }
+  }
+
+  async sendEmail(to: string, subject: string, body: string): Promise<void> {
+    if (!this.accessToken) {
+      throw new Error('Not authenticated');
+    }
+
+    const email = [
+      `To: ${to}`,
+      `Subject: ${subject}`,
+      '',
+      body
+    ].join('\n');
+
+    const encodedEmail = btoa(email).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+
+    const response = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${this.accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        raw: encodedEmail
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to send email');
+    }
+  }
+}
+
+export const gmailService = new GmailService();

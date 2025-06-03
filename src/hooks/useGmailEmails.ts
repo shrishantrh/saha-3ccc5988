@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { Email, Task } from '../types';
 import { gmailService } from '../services/gmailService';
@@ -21,14 +20,74 @@ export const useGmailEmails = (geminiService?: GeminiService, autoCreateTasks: b
     
     try {
       console.log('Fetching emails with Gemini service:', !!geminiService);
-      const fetchedEmails = await gmailService.fetchEmails(geminiService);
-      setEmails(fetchedEmails);
+      
+      // Fetch raw emails first
+      const rawEmails = await gmailService.fetchRawEmails();
+      console.log('Fetched raw emails:', rawEmails.length);
+      
+      // Process emails with Gemini if available
+      const processedEmails: Email[] = [];
+      
+      for (const email of rawEmails) {
+        let processedEmail = { ...email };
+        
+        if (geminiService) {
+          try {
+            console.log(`Analyzing email: ${email.subject}`);
+            const analysis = await geminiService.analyzeEmail(
+              email.subject, 
+              email.body, 
+              email.sender
+            );
+            
+            processedEmail = {
+              ...email,
+              category: analysis.category,
+              summary: analysis.summary,
+              priority: analysis.priority,
+              aiAnalysis: {
+                summary: analysis.summary,
+                category: analysis.category,
+                priority: analysis.priority,
+                tasks: analysis.tasks,
+                sentiment: analysis.sentiment,
+                urgency: analysis.urgency,
+                actionRequired: analysis.actionRequired,
+                estimatedResponseTime: analysis.estimatedResponseTime
+              }
+            };
+            
+            console.log('Email analysis completed:', analysis);
+          } catch (analysisError) {
+            console.error('Error analyzing email:', analysisError);
+            // Keep the email but with default analysis
+            processedEmail = {
+              ...email,
+              category: 'Personal',
+              summary: 'Unable to generate summary at this time',
+              priority: 'medium'
+            };
+          }
+        } else {
+          // No Gemini service available
+          processedEmail = {
+            ...email,
+            category: 'Personal',
+            summary: 'Connect Gemini AI for intelligent analysis',
+            priority: 'medium'
+          };
+        }
+        
+        processedEmails.push(processedEmail);
+      }
+      
+      setEmails(processedEmails);
       
       // Extract tasks from AI-analyzed emails if Gemini is connected and auto-create is enabled
       if (geminiService && autoCreateTasks) {
         const extractedTasks: Task[] = [];
         
-        for (const email of fetchedEmails) {
+        for (const email of processedEmails) {
           if (email.aiAnalysis?.tasks && email.aiAnalysis.tasks.length > 0) {
             const emailTasks = email.aiAnalysis.tasks.map((task, index) => {
               const dueDate = new Date(task.dueDate);
@@ -55,6 +114,7 @@ export const useGmailEmails = (geminiService?: GeminiService, autoCreateTasks: b
         console.log('Extracted tasks from AI analysis:', extractedTasks.length);
       }
     } catch (err: any) {
+      console.error('Error in fetchEmails:', err);
       setError(err.message);
     } finally {
       setIsLoading(false);

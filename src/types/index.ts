@@ -19,6 +19,10 @@ export interface Email {
       dueDate: string;
       priority: 'low' | 'medium' | 'high';
     }>;
+    sentiment?: 'positive' | 'neutral' | 'negative';
+    urgency?: number;
+    actionRequired?: boolean;
+    estimatedResponseTime?: string;
   };
 }
 
