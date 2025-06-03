@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { Email } from '../types';
-import { GroqService } from '../services/groqService';
+import { GeminiService } from '../services/geminiService';
 
 interface ChatMessage {
   id: string;
@@ -11,12 +11,37 @@ interface ChatMessage {
   isRetrying?: boolean;
 }
 
-export const useEmailChat = (groqService: GroqService | null, emails: Email[]) => {
+export const useEmailChat = (geminiService: GeminiService | null, emails: Email[]) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [smartSuggestions, setSmartSuggestions] = useState<string[]>([]);
+
+  const generateSmartSuggestions = async () => {
+    if (!geminiService || emails.length === 0) return;
+
+    try {
+      const emailContext = emails.slice(0, 10).map(email => ({
+        subject: email.subject,
+        sender: email.sender,
+        timestamp: email.timestamp,
+        snippet: email.snippet,
+        category: email.category || 'Personal',
+        priority: email.priority || 'medium',
+        summary: email.summary || 'No summary available',
+        tasks: email.aiAnalysis?.tasks || [],
+        sentiment: (email.aiAnalysis as any)?.sentiment,
+        urgency: (email.aiAnalysis as any)?.urgency
+      }));
+
+      const suggestions = await geminiService.generateSmartSuggestions(emailContext);
+      setSmartSuggestions(suggestions);
+    } catch (error) {
+      console.error('Error generating smart suggestions:', error);
+    }
+  };
 
   const sendMessage = async (userMessage: string) => {
-    if (!groqService || !userMessage.trim()) return;
+    if (!geminiService || !userMessage.trim()) return;
 
     const userChatMessage: ChatMessage = {
       id: crypto.randomUUID(),
@@ -32,7 +57,6 @@ export const useEmailChat = (groqService: GroqService | null, emails: Email[]) =
       console.log('Starting email search with message:', userMessage);
       console.log('Number of emails to search:', emails.length);
       
-      // Prepare email context for the AI - limit to prevent API issues
       const emailContext = emails.slice(0, 20).map(email => ({
         subject: email.subject,
         sender: email.sender,
@@ -41,13 +65,15 @@ export const useEmailChat = (groqService: GroqService | null, emails: Email[]) =
         category: email.category || 'Personal',
         priority: email.priority || 'medium',
         summary: email.summary || 'No summary available',
-        tasks: email.aiAnalysis?.tasks || []
+        tasks: email.aiAnalysis?.tasks || [],
+        sentiment: (email.aiAnalysis as any)?.sentiment,
+        urgency: (email.aiAnalysis as any)?.urgency
       }));
 
       console.log('Email context prepared:', emailContext.length, 'emails');
 
-      const response = await groqService.searchEmails(userMessage, emailContext);
-      console.log('Groq API response received:', response.substring(0, 100) + '...');
+      const response = await geminiService.searchEmails(userMessage, emailContext);
+      console.log('Gemini API response received:', response.substring(0, 100) + '...');
 
       const assistantMessage: ChatMessage = {
         id: crypto.randomUUID(),
@@ -59,18 +85,16 @@ export const useEmailChat = (groqService: GroqService | null, emails: Email[]) =
       setMessages(prev => [...prev, assistantMessage]);
     } catch (error) {
       console.error('Detailed error in email chat:', error);
-      console.error('Error type:', typeof error);
-      console.error('Error message:', error instanceof Error ? error.message : 'Unknown error');
       
       let errorContent = 'I encountered an error while searching your emails. Please try again.';
       
       if (error instanceof Error) {
         if (error.message.includes('Rate limit exceeded')) {
-          errorContent = 'I hit the API rate limit. Please wait a moment and try again. The system will automatically retry when ready.';
+          errorContent = 'I hit the API rate limit. Please wait a moment and try again.';
         } else if (error.message.includes('429')) {
-          errorContent = 'API rate limit reached. Please wait about 30-60 seconds before trying again.';
+          errorContent = 'API rate limit reached. Please wait about 30 seconds before trying again.';
         } else {
-          errorContent = `I encountered an error: ${error.message}. Please check your Groq API connection and try again.`;
+          errorContent = `I encountered an error: ${error.message}. Please check your Gemini API connection and try again.`;
         }
       }
       
@@ -95,6 +119,8 @@ export const useEmailChat = (groqService: GroqService | null, emails: Email[]) =
     messages,
     isLoading,
     sendMessage,
-    clearChat
+    clearChat,
+    smartSuggestions,
+    generateSmartSuggestions
   };
 };

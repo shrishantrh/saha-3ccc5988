@@ -1,6 +1,5 @@
-
 import { Email } from "../types";
-import { GroqService } from "./groqService";
+import { GeminiService } from "./geminiService";
 
 // Scope for Gmail API
 const SCOPES = [
@@ -66,7 +65,7 @@ export const gmailService = {
   },
   
   // Fetch emails with AI analysis
-  fetchEmails: async (groqService?: GroqService): Promise<Email[]> => {
+  fetchEmails: async (geminiService?: GeminiService): Promise<Email[]> => {
     const token = gmailService.getToken();
     if (!token) {
       throw new Error('Not authenticated');
@@ -75,7 +74,7 @@ export const gmailService = {
     try {
       // Fetch list of messages
       const response = await fetch(
-        'https://www.googleapis.com/gmail/v1/users/me/messages?maxResults=10',
+        'https://www.googleapis.com/gmail/v1/users/me/messages?maxResults=15',
         {
           headers: {
             'Authorization': `Bearer ${token}`
@@ -114,7 +113,7 @@ export const gmailService = {
           const sender = headers.find((h: {name: string}) => h.name === 'From')?.value || 'Unknown';
           const dateHeader = headers.find((h: {name: string}) => h.name === 'Date')?.value;
           
-          // Get email body - can be in parts or directly in payload
+          // Get email body
           let body = '';
           if (msgData.payload.parts && msgData.payload.parts.length > 0) {
             const textPart = msgData.payload.parts.find(
@@ -127,26 +126,30 @@ export const gmailService = {
             body = atob(msgData.payload.body.data.replace(/-/g, '+').replace(/_/g, '/'));
           }
           
-          // Use AI analysis if Groq service is available
+          // Use AI analysis if Gemini service is available
           let summary = 'No summary available';
           let category = 'Personal';
           let priority: 'low' | 'medium' | 'high' = 'medium';
           let aiAnalysis = undefined;
           
-          if (groqService && body.trim()) {
+          if (geminiService && body.trim()) {
             try {
               console.log(`Analyzing email: ${subject}`);
-              const analysis = await groqService.analyzeEmail(subject, body, sender);
+              const analysis = await geminiService.analyzeEmail(subject, body, sender);
               summary = analysis.summary;
               category = analysis.category;
               priority = analysis.priority;
               
-              // Store full AI analysis for task extraction
+              // Store full AI analysis including new fields
               aiAnalysis = {
                 summary: analysis.summary,
                 category: analysis.category,
                 priority: analysis.priority,
-                tasks: analysis.tasks
+                tasks: analysis.tasks,
+                sentiment: analysis.sentiment,
+                urgency: analysis.urgency,
+                actionRequired: analysis.actionRequired,
+                estimatedResponseTime: analysis.estimatedResponseTime
               };
             } catch (error) {
               console.error('Error analyzing email:', error);

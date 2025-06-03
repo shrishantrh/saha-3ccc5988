@@ -2,9 +2,9 @@
 import { useEffect, useState } from 'react';
 import { Email, Task } from '../types';
 import { gmailService } from '../services/gmailService';
-import { GroqService } from '../services/groqService';
+import { GeminiService } from '../services/geminiService';
 
-export const useGmailEmails = (groqService?: GroqService) => {
+export const useGmailEmails = (geminiService?: GeminiService, autoCreateTasks: boolean = true) => {
   const [emails, setEmails] = useState<Email[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -20,12 +20,12 @@ export const useGmailEmails = (groqService?: GroqService) => {
     setError(null);
     
     try {
-      console.log('Fetching emails with Groq service:', !!groqService);
-      const fetchedEmails = await gmailService.fetchEmails(groqService);
+      console.log('Fetching emails with Gemini service:', !!geminiService);
+      const fetchedEmails = await gmailService.fetchEmails(geminiService);
       setEmails(fetchedEmails);
       
-      // Extract tasks from AI-analyzed emails if Groq is connected
-      if (groqService) {
+      // Extract tasks from AI-analyzed emails if Gemini is connected and auto-create is enabled
+      if (geminiService && autoCreateTasks) {
         const extractedTasks: Task[] = [];
         
         for (const email of fetchedEmails) {
@@ -66,9 +66,8 @@ export const useGmailEmails = (groqService?: GroqService) => {
     if (gmailService.checkAuth()) {
       fetchEmails();
     }
-  }, [groqService]); // Re-fetch when groqService changes
+  }, [geminiService, autoCreateTasks]);
   
-  // Return data and refetch function
   return {
     emails,
     tasks,

@@ -9,7 +9,7 @@ import EmailChat from '../components/EmailChat';
 import { Email, Task } from '../types';
 import { useGmailAuth } from '../hooks/useGmailAuth';
 import { useGmailEmails } from '../hooks/useGmailEmails';
-import { useGroqIntegration } from '../hooks/useGroqIntegration';
+import { useGeminiIntegration } from '../hooks/useGeminiIntegration';
 
 // Mock data for demonstration when not connected to Gmail
 const mockEmails: Email[] = [
@@ -83,8 +83,8 @@ const mockTasks: Task[] = [
 
 const Index = () => {
   const { isAuthenticated } = useGmailAuth();
-  const { service: groqService, isValidated: isGroqConnected } = useGroqIntegration();
-  const { emails: gmailEmails, tasks: aiTasks, isLoading, error, refetch } = useGmailEmails(groqService);
+  const { service: geminiService, isValidated: isGeminiConnected } = useGeminiIntegration();
+  const { emails: gmailEmails, tasks: aiTasks, isLoading, error, refetch } = useGmailEmails(geminiService);
   
   const [selectedEmail, setSelectedEmail] = useState<Email | null>(null);
   const [emails, setEmails] = useState<Email[]>(mockEmails);
@@ -96,25 +96,27 @@ const Index = () => {
   useEffect(() => {
     if (isAuthenticated && gmailEmails.length > 0) {
       setEmails(gmailEmails);
-      // Clear selection when emails change
       setSelectedEmail(null);
       
-      // Use AI-generated tasks if available, otherwise fallback to mock
-      if (isGroqConnected && aiTasks.length > 0) {
+      if (isGeminiConnected && aiTasks.length > 0) {
         setTasks(aiTasks);
         console.log('Using AI-generated tasks:', aiTasks.length);
       }
     }
-  }, [isAuthenticated, gmailEmails, aiTasks, isGroqConnected]);
+  }, [isAuthenticated, gmailEmails, aiTasks, isGeminiConnected]);
 
   const handleEmailSelect = (email: Email) => {
     setSelectedEmail(email);
-    setReplyTo(email);
+    // Don't automatically open reply anymore
     
     // Mark as read
     setEmails(prev => prev.map(e => 
       e.id === email.id ? { ...e, read: true } : e
     ));
+  };
+
+  const handleReplyClick = (email: Email) => {
+    setReplyTo(email);
   };
 
   const handleTaskComplete = (taskId: string) => {
@@ -142,69 +144,74 @@ const Index = () => {
   const handleSendReply = async (message: string) => {
     if (replyTo) {
       console.log(`Sending reply to ${replyTo.sender}: ${message}`);
-      // Here you would integrate with Gmail API for sending
       setReplyTo(null);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50">
       {/* Header */}
-      <header className="bg-white/80 backdrop-blur-sm border-b border-slate-200 px-6 py-4">
+      <header className="bg-white/90 backdrop-blur-md border-b border-slate-200 px-6 py-4 shadow-sm">
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
-              <Mail className="w-5 h-5 text-white" />
+          <div className="flex items-center space-x-4">
+            <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+              <Mail className="w-6 h-6 text-white" />
             </div>
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              Saha
-            </h1>
-            <span className="text-sm text-slate-500 font-medium">
-              Intelligent Email Assistant
-            </span>
+            <div>
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                Saha
+              </h1>
+              <span className="text-sm text-slate-500 font-medium">
+                AI-Powered Email Intelligence
+              </span>
+            </div>
           </div>
-          <div className="flex items-center space-x-4 text-sm text-slate-600">
-            {isAuthenticated ? (
-              <div className="flex items-center space-x-1">
-                <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                <span>Connected to Gmail</span>
-              </div>
-            ) : (
-              <div className="flex items-center space-x-1">
-                <div className="w-2 h-2 bg-yellow-400 rounded-full"></div>
-                <span>Not connected</span>
-              </div>
-            )}
+          <div className="flex items-center space-x-6 text-sm">
+            <div className="flex items-center space-x-4">
+              {isAuthenticated ? (
+                <div className="flex items-center space-x-2 px-3 py-1 bg-green-100 text-green-700 rounded-full">
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  <span className="font-medium">Gmail Connected</span>
+                </div>
+              ) : (
+                <div className="flex items-center space-x-2 px-3 py-1 bg-yellow-100 text-yellow-700 rounded-full">
+                  <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                  <span className="font-medium">Gmail Offline</span>
+                </div>
+              )}
 
-            {isGroqConnected ? (
-              <div className="flex items-center space-x-1">
-                <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                <span>AI Active</span>
-              </div>
-            ) : (
-              <div className="flex items-center space-x-1">
-                <div className="w-2 h-2 bg-red-400 rounded-full"></div>
-                <span>AI Disabled</span>
-              </div>
-            )}
+              {isGeminiConnected ? (
+                <div className="flex items-center space-x-2 px-3 py-1 bg-purple-100 text-purple-700 rounded-full">
+                  <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></div>
+                  <span className="font-medium">Gemini AI Active</span>
+                </div>
+              ) : (
+                <div className="flex items-center space-x-2 px-3 py-1 bg-red-100 text-red-700 rounded-full">
+                  <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                  <span className="font-medium">AI Offline</span>
+                </div>
+              )}
+            </div>
 
-            {isGroqConnected && (
-              <button
-                onClick={() => setIsChatOpen(true)}
-                className="p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-full transition-colors"
-                title="AI Chat"
+            <div className="flex items-center space-x-2">
+              {isGeminiConnected && (
+                <button
+                  onClick={() => setIsChatOpen(true)}
+                  className="p-2 text-slate-500 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-all duration-200"
+                  title="AI Chat Assistant"
+                >
+                  <MessageCircle className="w-5 h-5" />
+                </button>
+              )}
+
+              <Link 
+                to="/settings" 
+                className="p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-all duration-200"
+                title="Settings"
               >
-                <MessageCircle className="w-5 h-5" />
-              </button>
-            )}
-
-            <Link 
-              to="/settings" 
-              className="p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-full transition-colors"
-              title="Settings"
-            >
-              <SettingsIcon className="w-5 h-5" />
-            </Link>
+                <SettingsIcon className="w-5 h-5" />
+              </Link>
+            </div>
           </div>
         </div>
       </header>
@@ -212,25 +219,25 @@ const Index = () => {
       {isAuthenticated ? (
         <>
           {/* Main Layout */}
-          <div className="flex h-[calc(100vh-80px)]">
-            {/* Email List Panel */}
-            <div className="w-96 bg-white/60 backdrop-blur-sm border-r border-slate-200">
+          <div className="flex h-[calc(100vh-88px)]">
+            {/* Email List Panel - Fixed width */}
+            <div className="w-96 bg-white/70 backdrop-blur-sm border-r border-slate-200 shadow-sm">
               {isLoading ? (
-                <div className="flex flex-col items-center justify-center h-full">
-                  <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
-                  <p className="text-slate-600">Loading emails...</p>
-                  {isGroqConnected && (
-                    <p className="text-xs text-slate-500 mt-2">Analyzing with AI...</p>
+                <div className="flex flex-col items-center justify-center h-full p-6">
+                  <div className="w-10 h-10 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mb-4"></div>
+                  <p className="text-slate-700 font-medium">Loading emails...</p>
+                  {isGeminiConnected && (
+                    <p className="text-sm text-purple-600 mt-2">✨ Analyzing with Gemini AI</p>
                   )}
                 </div>
               ) : error ? (
                 <div className="flex flex-col items-center justify-center h-full p-6">
                   <AlertCircle className="w-12 h-12 text-red-500 mb-4" />
                   <p className="text-slate-800 font-medium mb-2">Error loading emails</p>
-                  <p className="text-slate-600 mb-4 text-center">{error}</p>
+                  <p className="text-slate-600 mb-4 text-center text-sm">{error}</p>
                   <button 
                     onClick={() => refetch()} 
-                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-md"
                   >
                     Try Again
                   </button>
@@ -244,26 +251,28 @@ const Index = () => {
               )}
             </div>
 
-            {/* Email Detail Panel */}
-            <div className="flex-1 bg-white/40 backdrop-blur-sm">
+            {/* Email Detail Panel - Flexible width with max constraint */}
+            <div className="flex-1 bg-white/50 backdrop-blur-sm max-w-4xl">
               {selectedEmail ? (
                 <EmailDetail 
                   email={selectedEmail} 
-                  onReply={() => setReplyTo(selectedEmail)}
+                  onReply={() => handleReplyClick(selectedEmail)}
                 />
               ) : (
                 <div className="h-full flex items-center justify-center">
                   <div className="text-center text-slate-500">
-                    <Mail className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                    <h3 className="text-lg font-medium mb-2">Select an email</h3>
-                    <p className="text-sm">Choose an email from the list to view details</p>
+                    <div className="w-16 h-16 bg-gradient-to-r from-blue-100 to-purple-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                      <Mail className="w-8 h-8 text-blue-600" />
+                    </div>
+                    <h3 className="text-xl font-semibold mb-3 text-slate-800">Select an email</h3>
+                    <p className="text-sm text-slate-600">Choose an email from the list to view details and AI insights</p>
                   </div>
                 </div>
               )}
             </div>
 
-            {/* Task Panel */}
-            <div className="w-80 bg-white/60 backdrop-blur-sm border-l border-slate-200">
+            {/* Task Panel - Fixed width */}
+            <div className="w-80 bg-white/70 backdrop-blur-sm border-l border-slate-200 shadow-sm">
               <TaskPanel 
                 tasks={tasks}
                 emails={emails}
@@ -286,32 +295,33 @@ const Index = () => {
 
           {/* AI Chat Interface */}
           <EmailChat
-            groqService={groqService}
+            geminiService={geminiService}
             emails={emails}
             isOpen={isChatOpen}
             onClose={() => setIsChatOpen(false)}
           />
         </>
       ) : (
-        <div className="h-[calc(100vh-80px)] flex flex-col items-center justify-center p-8">
-          <div className="w-20 h-20 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full flex items-center justify-center mb-6">
-            <Mail className="w-10 h-10 text-white" />
+        <div className="h-[calc(100vh-88px)] flex flex-col items-center justify-center p-8">
+          <div className="w-24 h-24 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center mb-8 shadow-2xl">
+            <Mail className="w-12 h-12 text-white" />
           </div>
           
-          <h2 className="text-2xl font-bold text-slate-800 mb-4">
+          <h2 className="text-3xl font-bold text-slate-800 mb-4 text-center">
             Connect to Gmail to get started
           </h2>
           
-          <p className="text-slate-600 max-w-md text-center mb-8">
-            Saha needs to connect to your Gmail account to fetch emails, generate summaries, and extract tasks.
+          <p className="text-slate-600 max-w-lg text-center mb-8 leading-relaxed">
+            Saha uses advanced AI to analyze your emails, extract tasks, and provide intelligent insights. 
+            Connect your Gmail account to experience the future of email management.
           </p>
           
           <Link
             to="/settings"
-            className="flex items-center space-x-3 px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+            className="flex items-center space-x-3 px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl"
           >
             <Mail className="w-5 h-5" />
-            <span>Go to Settings</span>
+            <span className="font-medium">Connect Gmail Account</span>
           </Link>
         </div>
       )}
