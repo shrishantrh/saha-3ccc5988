@@ -248,7 +248,7 @@ const Settings = () => {
               <li>
                 <strong>Enable the Gmail API:</strong>
                 <ul className="mt-2">
-                  <li>In your project, navigate to "APIs & Services" > "Library"</li>
+                  <li>In your project, navigate to "APIs & Services" {'>'}  "Library"</li>
                   <li>Search for "Gmail API" and enable it</li>
                 </ul>
               </li>
@@ -256,7 +256,7 @@ const Settings = () => {
               <li>
                 <strong>Configure OAuth Consent Screen:</strong>
                 <ul className="mt-2">
-                  <li>Go to "APIs & Services" > "OAuth consent screen"</li>
+                  <li>Go to "APIs & Services" {'>'} "OAuth consent screen"</li>
                   <li>Select "External" user type and create</li>
                   <li>Fill in the required fields (App name, support email)</li>
                   <li>Add authorized domains (your app's domain)</li>
@@ -272,8 +272,8 @@ const Settings = () => {
               <li>
                 <strong>Create OAuth Credentials:</strong>
                 <ul className="mt-2">
-                  <li>Go to "APIs & Services" > "Credentials"</li>
-                  <li>Click "Create Credentials" > "OAuth client ID"</li>
+                  <li>Go to "APIs & Services" {'>'} "Credentials"</li>
+                  <li>Click "Create Credentials" {'>'} "OAuth client ID"</li>
                   <li>Select "Web application" as application type</li>
                   <li>Add authorized JavaScript origins:
                     <ul>
