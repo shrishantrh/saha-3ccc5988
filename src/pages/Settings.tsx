@@ -2,7 +2,7 @@
 import React from 'react';
 import { useGmailAuth } from '../hooks/useGmailAuth';
 import { useGeminiIntegration } from '../hooks/useGeminiIntegration';
-import { ArrowLeft, Mail, CheckCircle, AlertCircle, LogOut, Key, Sparkles } from 'lucide-react';
+import { ArrowLeft, Mail, CheckCircle, AlertCircle, LogOut, Key, Sparkles, ExternalLink } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const Settings = () => {
@@ -78,9 +78,16 @@ const Settings = () => {
           ) : (
             <div>
               {error && (
-                <div className="flex items-center space-x-3 text-red-700 bg-red-50 p-4 rounded-md mb-4">
-                  <AlertCircle className="w-5 h-5" />
-                  <span>{error}</span>
+                <div className="flex items-start space-x-3 text-red-700 bg-red-50 p-4 rounded-md mb-4">
+                  <AlertCircle className="w-5 h-5 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="font-medium">{error}</p>
+                    {error.includes('Client ID') && (
+                      <p className="text-sm mt-2">
+                        Make sure you've followed the setup instructions below and replaced the CLIENT_ID in the code.
+                      </p>
+                    )}
+                  </div>
                 </div>
               )}
               
@@ -217,11 +224,23 @@ const Settings = () => {
           </h2>
           
           <div className="prose prose-slate max-w-none">
+            <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4 mb-6">
+              <div className="flex items-start space-x-3">
+                <AlertCircle className="w-5 h-5 text-yellow-600 mt-0.5 flex-shrink-0" />
+                <div>
+                  <h3 className="font-medium text-yellow-800">Important: Client ID Required</h3>
+                  <p className="text-yellow-700 text-sm mt-1">
+                    You must complete the setup below and update the CLIENT_ID in your code before Gmail connection will work.
+                  </p>
+                </div>
+              </div>
+            </div>
+
             <ol className="space-y-4">
               <li>
                 <strong>Create a Google Cloud Project:</strong>
                 <ul className="mt-2">
-                  <li>Go to the <a href="https://console.cloud.google.com/" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800">Google Cloud Console</a></li>
+                  <li>Go to the <a href="https://console.cloud.google.com/" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 inline-flex items-center">Google Cloud Console <ExternalLink className="w-3 h-3 ml-1" /></a></li>
                   <li>Create a new project</li>
                 </ul>
               </li>
@@ -229,18 +248,18 @@ const Settings = () => {
               <li>
                 <strong>Enable the Gmail API:</strong>
                 <ul className="mt-2">
-                  <li>In your project, navigate to &quot;APIs &amp; Services&quot; &gt; &quot;Library&quot;</li>
-                  <li>Search for &quot;Gmail API&quot; and enable it</li>
+                  <li>In your project, navigate to "APIs & Services" > "Library"</li>
+                  <li>Search for "Gmail API" and enable it</li>
                 </ul>
               </li>
               
               <li>
                 <strong>Configure OAuth Consent Screen:</strong>
                 <ul className="mt-2">
-                  <li>Go to &quot;APIs &amp; Services&quot; &gt; &quot;OAuth consent screen&quot;</li>
-                  <li>Select &quot;External&quot; user type and create</li>
+                  <li>Go to "APIs & Services" > "OAuth consent screen"</li>
+                  <li>Select "External" user type and create</li>
                   <li>Fill in the required fields (App name, support email)</li>
-                  <li>Add authorized domains (your app&apos;s domain)</li>
+                  <li>Add authorized domains (your app's domain)</li>
                   <li>Add scopes for Gmail API:
                     <ul>
                       <li>https://www.googleapis.com/auth/gmail.readonly</li>
@@ -253,9 +272,9 @@ const Settings = () => {
               <li>
                 <strong>Create OAuth Credentials:</strong>
                 <ul className="mt-2">
-                  <li>Go to &quot;APIs &amp; Services&quot; &gt; &quot;Credentials&quot;</li>
-                  <li>Click &quot;Create Credentials&quot; &gt; &quot;OAuth client ID&quot;</li>
-                  <li>Select &quot;Web application&quot; as application type</li>
+                  <li>Go to "APIs & Services" > "Credentials"</li>
+                  <li>Click "Create Credentials" > "OAuth client ID"</li>
+                  <li>Select "Web application" as application type</li>
                   <li>Add authorized JavaScript origins:
                     <ul>
                       <li>http://localhost:8080 (for development)</li>
@@ -263,15 +282,16 @@ const Settings = () => {
                     </ul>
                   </li>
                   <li>Add authorized redirect URIs (same as origins)</li>
-                  <li>Click &quot;Create&quot; and copy your Client ID</li>
+                  <li>Click "Create" and copy your Client ID</li>
                 </ul>
               </li>
               
               <li>
-                <strong>Update Your Application:</strong>
+                <strong className="text-red-600">Update Your Application (REQUIRED):</strong>
                 <ul className="mt-2">
-                  <li>Open src/services/gmailService.ts</li>
-                  <li>Replace the CLIENT_ID value with your OAuth client ID</li>
+                  <li>Open <code className="bg-gray-100 px-1 py-0.5 rounded text-sm">src/services/gmailService.ts</code></li>
+                  <li>Replace <code className="bg-gray-100 px-1 py-0.5 rounded text-sm">YOUR_GMAIL_CLIENT_ID</code> with your actual OAuth client ID</li>
+                  <li>Or set the <code className="bg-gray-100 px-1 py-0.5 rounded text-sm">VITE_GMAIL_CLIENT_ID</code> environment variable</li>
                 </ul>
               </li>
             </ol>

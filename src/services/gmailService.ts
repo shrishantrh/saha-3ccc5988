@@ -23,20 +23,33 @@ interface GmailListResponse {
 
 class GmailService {
   private accessToken: string | null = null;
-  private readonly CLIENT_ID = 'YOUR_GMAIL_CLIENT_ID'; // Replace with your actual client ID
+  // Replace this with your actual Gmail OAuth client ID from Google Cloud Console
+  // Get it from: https://console.cloud.google.com/apis/credentials
+  // Get it from: https://console.cloud.google.com/apis/credentials
+  private readonly CLIENT_ID = import.meta.env.VITE_GMAIL_CLIENT_ID || 'YOUR_GMAIL_CLIENT_ID';
 
   async initialize() {
+    // Check if client ID is properly configured
+    if (this.CLIENT_ID === 'YOUR_GMAIL_CLIENT_ID' || !this.CLIENT_ID) {
+      throw new Error('Gmail Client ID not configured. Please set VITE_GMAIL_CLIENT_ID environment variable or update the CLIENT_ID in gmailService.ts');
+    }
+
     // Load Google APIs
     if (!window.gapi) {
       await this.loadGoogleAPIs();
     }
     
-    await new Promise<void>((resolve) => {
+    await new Promise<void>((resolve, reject) => {
       window.gapi.load('auth2', () => {
-        window.gapi.auth2.init({
-          client_id: this.CLIENT_ID,
-        });
-        resolve();
+        try {
+          window.gapi.auth2.init({
+            client_id: this.CLIENT_ID,
+          });
+          resolve();
+        } catch (error) {
+          console.error('Failed to initialize Google Auth:', error);
+          reject(new Error('Failed to initialize Google Auth. Please check your client ID.'));
+        }
       });
     });
   }
@@ -62,8 +75,15 @@ class GmailService {
       
       this.accessToken = user.getAuthResponse().access_token;
       localStorage.setItem('gmail_access_token', this.accessToken);
-    } catch (error) {
-      throw new Error('Failed to authenticate with Gmail');
+    } catch (error: any) {
+      console.error('Gmail authentication error:', error);
+      if (error.error === 'popup_closed_by_user') {
+        throw new Error('Authentication cancelled. Please try again.');
+      } else if (error.error === 'invalid_client') {
+        throw new Error('Gmail OAuth client not configured properly. Please check your Client ID setup.');
+      } else {
+        throw new Error('Failed to authenticate with Gmail. Please check your setup and try again.');
+      }
     }
   }
 
