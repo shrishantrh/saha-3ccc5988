@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Mail, Clock, AlertCircle, CheckCircle, X, MoreHorizontal, Settings as SettingsIcon, MessageCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -107,7 +108,7 @@ const Index = () => {
 
   const handleEmailSelect = (email: Email) => {
     setSelectedEmail(email);
-    // Don't automatically open reply anymore
+    // Reply interface will only open when explicitly requested via handleReplyClick
     
     // Mark as read
     setEmails(prev => prev.map(e => 

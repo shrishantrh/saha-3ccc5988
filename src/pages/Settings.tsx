@@ -1,12 +1,36 @@
 
 import React from 'react';
 import { useGmailAuth } from '../hooks/useGmailAuth';
-import { ArrowLeft, Mail, CheckCircle, AlertCircle, LogOut } from 'lucide-react';
+import { useGeminiIntegration } from '../hooks/useGeminiIntegration';
+import { ArrowLeft, Mail, CheckCircle, AlertCircle, LogOut, Key, Sparkles } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import GroqApiKeySettings from '../components/GroqApiKeySettings';
 
 const Settings = () => {
   const { isAuthenticated, isLoading, error, login, logout } = useGmailAuth();
+  const { 
+    apiKey, 
+    isValidated: isGeminiConnected, 
+    isValidating, 
+    validateAndSaveApiKey, 
+    clearApiKey 
+  } = useGeminiIntegration();
+
+  const [geminiApiKey, setGeminiApiKey] = React.useState('');
+  const [geminiError, setGeminiError] = React.useState<string | null>(null);
+
+  const handleGeminiApiKeySubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!geminiApiKey.trim()) return;
+
+    setGeminiError(null);
+    const isValid = await validateAndSaveApiKey(geminiApiKey.trim());
+    
+    if (isValid) {
+      setGeminiApiKey('');
+    } else {
+      setGeminiError('Invalid API key. Please check your Gemini API key and try again.');
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-8">
@@ -81,8 +105,110 @@ const Settings = () => {
           )}
         </div>
 
-        {/* Groq API Settings */}
-        <GroqApiKeySettings />
+        {/* Gemini AI Integration */}
+        <div className="bg-white shadow-md rounded-lg p-6">
+          <div className="flex items-center space-x-3 mb-4">
+            <Sparkles className="w-6 h-6 text-purple-600" />
+            <h2 className="text-xl font-semibold text-slate-800">
+              Gemini AI Integration
+            </h2>
+          </div>
+
+          {isGeminiConnected ? (
+            <div>
+              <div className="flex items-center space-x-3 text-purple-700 bg-purple-50 p-4 rounded-md mb-4">
+                <CheckCircle className="w-5 h-5" />
+                <span>Gemini AI is connected and active!</span>
+              </div>
+              
+              <div className="mb-4">
+                <p className="text-slate-600 mb-2">
+                  Your emails are being enhanced with AI analysis including:
+                </p>
+                <ul className="list-disc list-inside text-slate-600 space-y-1 ml-4 text-sm">
+                  <li>Smart categorization and priority detection</li>
+                  <li>Automatic task extraction</li>
+                  <li>Sentiment analysis</li>
+                  <li>AI-powered email search and chat</li>
+                </ul>
+              </div>
+
+              <button
+                onClick={clearApiKey}
+                className="flex items-center space-x-2 px-4 py-2 bg-slate-100 text-slate-700 rounded-md hover:bg-slate-200 transition-colors"
+              >
+                <LogOut className="w-4 h-4" />
+                <span>Disconnect Gemini</span>
+              </button>
+            </div>
+          ) : (
+            <div>
+              {geminiError && (
+                <div className="flex items-center space-x-3 text-red-700 bg-red-50 p-4 rounded-md mb-4">
+                  <AlertCircle className="w-5 h-5" />
+                  <span>{geminiError}</span>
+                </div>
+              )}
+
+              <div className="mb-6">
+                <p className="text-slate-600 mb-4">
+                  Connect Gemini AI to unlock powerful email intelligence features:
+                </p>
+                <ul className="list-disc list-inside text-slate-600 space-y-2 ml-4">
+                  <li>Smart email categorization and priority detection</li>
+                  <li>Automatic task and deadline extraction</li>
+                  <li>AI-powered email search and chat assistant</li>
+                  <li>Sentiment analysis and response suggestions</li>
+                </ul>
+              </div>
+
+              <form onSubmit={handleGeminiApiKeySubmit} className="space-y-4">
+                <div>
+                  <label htmlFor="gemini-api-key" className="block text-sm font-medium text-slate-700 mb-2">
+                    Gemini API Key
+                  </label>
+                  <input
+                    id="gemini-api-key"
+                    type="password"
+                    value={geminiApiKey}
+                    onChange={(e) => setGeminiApiKey(e.target.value)}
+                    placeholder="Enter your Gemini API key"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  />
+                  <p className="text-xs text-slate-500 mt-1">
+                    Get your API key from{' '}
+                    <a
+                      href="https://aistudio.google.com/app/apikey"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-purple-600 hover:text-purple-800 underline"
+                    >
+                      Google AI Studio
+                    </a>
+                  </p>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={!geminiApiKey.trim() || isValidating}
+                  className="flex items-center space-x-3 px-6 py-3 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isValidating ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      <span>Validating...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Key className="w-5 h-5" />
+                      <span>Connect Gemini AI</span>
+                    </>
+                  )}
+                </button>
+              </form>
+            </div>
+          )}
+        </div>
         
         {/* Setup Instructions */}
         <div className="bg-white shadow-md rounded-lg p-6">
