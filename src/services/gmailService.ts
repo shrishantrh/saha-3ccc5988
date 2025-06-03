@@ -1,3 +1,4 @@
+import { Email } from '../types';
 
 interface GmailMessage {
   id: string;
@@ -30,9 +31,12 @@ class GmailService {
       await this.loadGoogleAPIs();
     }
     
-    await gapi.load('auth2', () => {
-      gapi.auth2.init({
-        client_id: this.CLIENT_ID,
+    await new Promise<void>((resolve) => {
+      window.gapi.load('auth2', () => {
+        window.gapi.auth2.init({
+          client_id: this.CLIENT_ID,
+        });
+        resolve();
       });
     });
   }
@@ -51,7 +55,7 @@ class GmailService {
     try {
       await this.initialize();
       
-      const authInstance = gapi.auth2.getAuthInstance();
+      const authInstance = window.gapi.auth2.getAuthInstance();
       const user = await authInstance.signIn({
         scope: 'https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.send'
       });
@@ -65,7 +69,7 @@ class GmailService {
 
   async logout(): Promise<void> {
     try {
-      const authInstance = gapi.auth2.getAuthInstance();
+      const authInstance = window.gapi.auth2.getAuthInstance();
       await authInstance.signOut();
       this.accessToken = null;
       localStorage.removeItem('gmail_access_token');
