@@ -25,7 +25,6 @@ class GmailService {
   private accessToken: string | null = null;
   // Replace this with your actual Gmail OAuth client ID from Google Cloud Console
   // Get it from: https://console.cloud.google.com/apis/credentials
-  // Get it from: https://console.cloud.google.com/apis/credentials
   private readonly CLIENT_ID = import.meta.env.VITE_GMAIL_CLIENT_ID || 'YOUR_GMAIL_CLIENT_ID';
 
   async initialize() {
@@ -34,32 +33,18 @@ class GmailService {
       throw new Error('Gmail Client ID not configured. Please set VITE_GMAIL_CLIENT_ID environment variable or update the CLIENT_ID in gmailService.ts');
     }
 
-    // Load Google APIs
-    if (!window.gapi) {
-      await this.loadGoogleAPIs();
+    // Load Google Identity Services
+    if (!window.google) {
+      await this.loadGoogleIdentityServices();
     }
-    
-    await new Promise<void>((resolve, reject) => {
-      window.gapi.load('auth2', () => {
-        try {
-          window.gapi.auth2.init({
-            client_id: this.CLIENT_ID,
-          });
-          resolve();
-        } catch (error) {
-          console.error('Failed to initialize Google Auth:', error);
-          reject(new Error('Failed to initialize Google Auth. Please check your client ID.'));
-        }
-      });
-    });
   }
 
-  private loadGoogleAPIs(): Promise<void> {
+  private loadGoogleIdentityServices(): Promise<void> {
     return new Promise((resolve, reject) => {
       const script = document.createElement('script');
-      script.src = 'https://apis.google.com/js/api.js';
+      script.src = 'https://accounts.google.com/gsi/client';
       script.onload = () => resolve();
-      script.onerror = () => reject(new Error('Failed to load Google APIs'));
+      script.onerror = () => reject(new Error('Failed to load Google Identity Services'));
       document.head.appendChild(script);
     });
   }
@@ -68,29 +53,40 @@ class GmailService {
     try {
       await this.initialize();
       
-      const authInstance = window.gapi.auth2.getAuthInstance();
-      const user = await authInstance.signIn({
-        scope: 'https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.send'
+      return new Promise((resolve, reject) => {
+        const tokenClient = window.google.accounts.oauth2.initTokenClient({
+          client_id: this.CLIENT_ID,
+          scope: 'https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.send',
+          callback: (response: any) => {
+            if (response.error) {
+              console.error('Gmail authentication error:', response);
+              if (response.error === 'popup_closed_by_user') {
+                reject(new Error('Authentication cancelled. Please try again.'));
+              } else {
+                reject(new Error('Failed to authenticate with Gmail. Please check your setup and try again.'));
+              }
+              return;
+            }
+            
+            this.accessToken = response.access_token;
+            localStorage.setItem('gmail_access_token', this.accessToken);
+            resolve();
+          },
+        });
+        
+        tokenClient.requestAccessToken();
       });
-      
-      this.accessToken = user.getAuthResponse().access_token;
-      localStorage.setItem('gmail_access_token', this.accessToken);
     } catch (error: any) {
       console.error('Gmail authentication error:', error);
-      if (error.error === 'popup_closed_by_user') {
-        throw new Error('Authentication cancelled. Please try again.');
-      } else if (error.error === 'invalid_client') {
-        throw new Error('Gmail OAuth client not configured properly. Please check your Client ID setup.');
-      } else {
-        throw new Error('Failed to authenticate with Gmail. Please check your setup and try again.');
-      }
+      throw new Error('Failed to authenticate with Gmail. Please check your setup and try again.');
     }
   }
 
   async logout(): Promise<void> {
     try {
-      const authInstance = window.gapi.auth2.getAuthInstance();
-      await authInstance.signOut();
+      if (this.accessToken && window.google) {
+        window.google.accounts.oauth2.revoke(this.accessToken);
+      }
       this.accessToken = null;
       localStorage.removeItem('gmail_access_token');
     } catch (error) {

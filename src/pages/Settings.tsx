@@ -228,9 +228,9 @@ const Settings = () => {
               <div className="flex items-start space-x-3">
                 <AlertCircle className="w-5 h-5 text-yellow-600 mt-0.5 flex-shrink-0" />
                 <div>
-                  <h3 className="font-medium text-yellow-800">Important: Client ID Required</h3>
+                  <h3 className="font-medium text-yellow-800">Important: OAuth 2.0 Setup Required</h3>
                   <p className="text-yellow-700 text-sm mt-1">
-                    You must complete the setup below and update the CLIENT_ID in your code before Gmail connection will work.
+                    You must complete the setup below and set your CLIENT_ID before Gmail connection will work. Make sure to use the correct redirect URIs for the new OAuth flow.
                   </p>
                 </div>
               </div>
@@ -275,13 +275,14 @@ const Settings = () => {
                   <li>Go to "APIs & Services" {'>'} "Credentials"</li>
                   <li>Click "Create Credentials" {'>'} "OAuth client ID"</li>
                   <li>Select "Web application" as application type</li>
-                  <li>Add authorized JavaScript origins:
+                  <li><strong className="text-green-600">Important:</strong> Add authorized JavaScript origins (NOT redirect URIs for this flow):
                     <ul>
                       <li>http://localhost:8080 (for development)</li>
+                      <li>http://192.168.12.203:8080 (your current development server)</li>
                       <li>https://your-domain.com (for production)</li>
                     </ul>
                   </li>
-                  <li>Add authorized redirect URIs (same as origins)</li>
+                  <li className="text-slate-600 text-sm">Note: The new Google Identity Services uses JavaScript origins instead of redirect URIs for the token flow</li>
                   <li>Click "Create" and copy your Client ID</li>
                 </ul>
               </li>
@@ -289,9 +290,8 @@ const Settings = () => {
               <li>
                 <strong className="text-red-600">Update Your Application (REQUIRED):</strong>
                 <ul className="mt-2">
-                  <li>Open <code className="bg-gray-100 px-1 py-0.5 rounded text-sm">src/services/gmailService.ts</code></li>
-                  <li>Replace <code className="bg-gray-100 px-1 py-0.5 rounded text-sm">YOUR_GMAIL_CLIENT_ID</code> with your actual OAuth client ID</li>
-                  <li>Or set the <code className="bg-gray-100 px-1 py-0.5 rounded text-sm">VITE_GMAIL_CLIENT_ID</code> environment variable</li>
+                  <li>Set the <code className="bg-gray-100 px-1 py-0.5 rounded text-sm">VITE_GMAIL_CLIENT_ID</code> environment variable with your OAuth client ID</li>
+                  <li>Or replace <code className="bg-gray-100 px-1 py-0.5 rounded text-sm">YOUR_GMAIL_CLIENT_ID</code> in <code className="bg-gray-100 px-1 py-0.5 rounded text-sm">src/services/gmailService.ts</code></li>
                 </ul>
               </li>
             </ol>
