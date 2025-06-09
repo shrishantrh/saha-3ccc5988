@@ -31,17 +31,44 @@ export const useGmailAuth = () => {
     checkAuthentication();
   }, []);
 
-  const login = () => {
-    gmailService.login();
+  const login = async () => {
+    console.log('Login button clicked, starting authentication...');
+    setAuth(prev => ({ ...prev, isLoading: true, error: null }));
+    
+    try {
+      await gmailService.login();
+      console.log('Login successful, updating auth state');
+      setAuth({
+        isAuthenticated: true,
+        isLoading: false,
+        error: null
+      });
+    } catch (error: any) {
+      console.error('Login failed:', error);
+      setAuth({
+        isAuthenticated: false,
+        isLoading: false,
+        error: error.message
+      });
+    }
   };
 
-  const logout = () => {
-    gmailService.logout();
-    setAuth({
-      isAuthenticated: false,
-      isLoading: false,
-      error: null
-    });
+  const logout = async () => {
+    try {
+      await gmailService.logout();
+      setAuth({
+        isAuthenticated: false,
+        isLoading: false,
+        error: null
+      });
+    } catch (error: any) {
+      console.error('Logout error:', error);
+      setAuth({
+        isAuthenticated: false,
+        isLoading: false,
+        error: error.message
+      });
+    }
   };
 
   return {

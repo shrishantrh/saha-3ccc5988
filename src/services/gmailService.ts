@@ -1,3 +1,4 @@
+
 import { Email } from '../types';
 
 interface GmailMessage {
@@ -23,16 +24,10 @@ interface GmailListResponse {
 
 class GmailService {
   private accessToken: string | null = null;
-  // Replace this with your actual Gmail OAuth client ID from Google Cloud Console
-  // Get it from: https://console.cloud.google.com/apis/credentials
-  private readonly CLIENT_ID = import.meta.env.VITE_GMAIL_CLIENT_ID || 'YOUR_GMAIL_CLIENT_ID';
+  // Using the provided OAuth client ID
+  private readonly CLIENT_ID = '881935451747-qhc9n0jtlpe206rb2ri50kaajsl196hp.apps.googleusercontent.com';
 
   async initialize() {
-    // Check if client ID is properly configured
-    if (this.CLIENT_ID === 'YOUR_GMAIL_CLIENT_ID' || !this.CLIENT_ID) {
-      throw new Error('Gmail Client ID not configured. Please set VITE_GMAIL_CLIENT_ID environment variable or update the CLIENT_ID in gmailService.ts');
-    }
-
     // Load Google Identity Services
     if (!window.google) {
       await this.loadGoogleIdentityServices();
@@ -51,13 +46,16 @@ class GmailService {
 
   async login(): Promise<void> {
     try {
+      console.log('Starting Gmail login process...');
       await this.initialize();
       
       return new Promise((resolve, reject) => {
+        console.log('Initializing token client with CLIENT_ID:', this.CLIENT_ID);
         const tokenClient = window.google.accounts.oauth2.initTokenClient({
           client_id: this.CLIENT_ID,
           scope: 'https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.send',
           callback: (response: any) => {
+            console.log('OAuth callback response:', response);
             if (response.error) {
               console.error('Gmail authentication error:', response);
               if (response.error === 'popup_closed_by_user') {
@@ -68,12 +66,14 @@ class GmailService {
               return;
             }
             
+            console.log('Authentication successful, storing access token');
             this.accessToken = response.access_token;
             localStorage.setItem('gmail_access_token', this.accessToken);
             resolve();
           },
         });
         
+        console.log('Requesting access token...');
         tokenClient.requestAccessToken();
       });
     } catch (error: any) {
