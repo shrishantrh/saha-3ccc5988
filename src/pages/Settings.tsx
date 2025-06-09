@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useGmailAuth } from '../hooks/useGmailAuth';
 import { useGeminiIntegration } from '../hooks/useGeminiIntegration';
@@ -82,9 +81,9 @@ const Settings = () => {
                   <AlertCircle className="w-5 h-5 mt-0.5 flex-shrink-0" />
                   <div>
                     <p className="font-medium">{error}</p>
-                    {error.includes('Client ID') && (
+                    {error.includes('redirect_uri_mismatch') && (
                       <p className="text-sm mt-2">
-                        Make sure you've followed the setup instructions below and replaced the CLIENT_ID in the code.
+                        Make sure you've added the correct <strong>JavaScript origins</strong> (not redirect URIs) to your OAuth client configuration. See setup instructions below.
                       </p>
                     )}
                   </div>
@@ -230,7 +229,7 @@ const Settings = () => {
                 <div>
                   <h3 className="font-medium text-yellow-800">Important: OAuth 2.0 Setup Required</h3>
                   <p className="text-yellow-700 text-sm mt-1">
-                    You must complete the setup below and set your CLIENT_ID before Gmail connection will work. Make sure to use the correct redirect URIs for the new OAuth flow.
+                    You must complete the setup below with the correct <strong>JavaScript origins</strong> configuration. The new Google Identity Services uses origins, not redirect URIs.
                   </p>
                 </div>
               </div>
@@ -241,7 +240,7 @@ const Settings = () => {
                 <strong>Create a Google Cloud Project:</strong>
                 <ul className="mt-2">
                   <li>Go to the <a href="https://console.cloud.google.com/" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 inline-flex items-center">Google Cloud Console <ExternalLink className="w-3 h-3 ml-1" /></a></li>
-                  <li>Create a new project</li>
+                  <li>Create a new project or select an existing one</li>
                 </ul>
               </li>
               
@@ -258,43 +257,65 @@ const Settings = () => {
                 <ul className="mt-2">
                   <li>Go to "APIs & Services" {'>'} "OAuth consent screen"</li>
                   <li>Select "External" user type and create</li>
-                  <li>Fill in the required fields (App name, support email)</li>
-                  <li>Add authorized domains (your app's domain)</li>
+                  <li>Fill in the required fields (App name, support email, developer contact)</li>
                   <li>Add scopes for Gmail API:
-                    <ul>
-                      <li>https://www.googleapis.com/auth/gmail.readonly</li>
-                      <li>https://www.googleapis.com/auth/gmail.send</li>
+                    <ul className="ml-4 mt-1">
+                      <li><code className="bg-gray-100 px-1 py-0.5 rounded text-xs">https://www.googleapis.com/auth/gmail.readonly</code></li>
+                      <li><code className="bg-gray-100 px-1 py-0.5 rounded text-xs">https://www.googleapis.com/auth/gmail.send</code></li>
                     </ul>
                   </li>
+                  <li>Add test users if your app is not yet published</li>
                 </ul>
               </li>
               
               <li>
-                <strong>Create OAuth Credentials:</strong>
+                <strong className="text-green-600">Create OAuth Credentials (Critical Step):</strong>
                 <ul className="mt-2">
                   <li>Go to "APIs & Services" {'>'} "Credentials"</li>
                   <li>Click "Create Credentials" {'>'} "OAuth client ID"</li>
                   <li>Select "Web application" as application type</li>
-                  <li><strong className="text-green-600">Important:</strong> Add authorized JavaScript origins (NOT redirect URIs for this flow):
-                    <ul>
-                      <li>http://localhost:8080 (for development)</li>
-                      <li>http://192.168.12.203:8080 (your current development server)</li>
-                      <li>https://your-domain.com (for production)</li>
-                    </ul>
+                  <li><strong className="text-red-600">IMPORTANT:</strong> Add <strong>Authorized JavaScript origins</strong> (NOT redirect URIs):
+                    <div className="bg-blue-50 border border-blue-200 rounded p-3 mt-2">
+                      <p className="font-medium text-blue-800 mb-2">Add these JavaScript origins:</p>
+                      <ul className="space-y-1 text-sm">
+                        <li><code className="bg-white px-2 py-1 rounded border">http://localhost:8080</code> (for development)</li>
+                        <li><code className="bg-white px-2 py-1 rounded border">http://192.168.12.203:8080</code> (your current development server)</li>
+                        <li><code className="bg-white px-2 py-1 rounded border">https://your-domain.com</code> (for production)</li>
+                      </ul>
+                      <p className="text-blue-700 text-xs mt-2">
+                        ⚠️ Do NOT add any "Authorized redirect URIs" - leave that section empty for Google Identity Services
+                      </p>
+                    </div>
                   </li>
-                  <li className="text-slate-600 text-sm">Note: The new Google Identity Services uses JavaScript origins instead of redirect URIs for the token flow</li>
                   <li>Click "Create" and copy your Client ID</li>
                 </ul>
               </li>
               
               <li>
-                <strong className="text-red-600">Update Your Application (REQUIRED):</strong>
+                <strong>Verify Your Configuration:</strong>
                 <ul className="mt-2">
-                  <li>Set the <code className="bg-gray-100 px-1 py-0.5 rounded text-sm">VITE_GMAIL_CLIENT_ID</code> environment variable with your OAuth client ID</li>
-                  <li>Or replace <code className="bg-gray-100 px-1 py-0.5 rounded text-sm">YOUR_GMAIL_CLIENT_ID</code> in <code className="bg-gray-100 px-1 py-0.5 rounded text-sm">src/services/gmailService.ts</code></li>
+                  <li>Your OAuth client should have <strong>JavaScript origins</strong> configured</li>
+                  <li>Your OAuth client should have <strong>NO redirect URIs</strong> configured</li>
+                  <li>Your consent screen should include the Gmail scopes</li>
+                  <li>The client ID in the code matches your OAuth client ID</li>
                 </ul>
               </li>
             </ol>
+
+            <div className="bg-green-50 border border-green-200 rounded-md p-4 mt-6">
+              <div className="flex items-start space-x-3">
+                <CheckCircle className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
+                <div>
+                  <h3 className="font-medium text-green-800">Current Configuration</h3>
+                  <p className="text-green-700 text-sm mt-1">
+                    Client ID: <code className="bg-white px-1 py-0.5 rounded text-xs">881935451747-qhc9n0jtlpe206rb2ri50kaajsl196hp.apps.googleusercontent.com</code>
+                  </p>
+                  <p className="text-green-700 text-sm mt-1">
+                    Make sure this matches your OAuth client ID and that you've added the JavaScript origins above.
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
