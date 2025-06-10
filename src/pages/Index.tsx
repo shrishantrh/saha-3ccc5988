@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Mail, Clock, AlertCircle, CheckCircle, X, MoreHorizontal, Settings as SettingsIcon, MessageCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -93,18 +92,30 @@ const Index = () => {
   const [replyTo, setReplyTo] = useState<Email | null>(null);
   const [isChatOpen, setIsChatOpen] = useState(false);
 
-  // Update emails and tasks when Gmail emails change
+  // Update emails and tasks when Gmail emails change OR when Gemini connection changes
   useEffect(() => {
+    console.log('Index useEffect triggered - authenticated:', isAuthenticated, 'gmailEmails:', gmailEmails.length, 'geminiConnected:', isGeminiConnected);
+    
     if (isAuthenticated && gmailEmails.length > 0) {
+      console.log('Updating emails with Gmail data');
       setEmails(gmailEmails);
       setSelectedEmail(null);
       
       if (isGeminiConnected && aiTasks.length > 0) {
+        console.log('Updating tasks with AI-generated tasks:', aiTasks.length);
         setTasks(aiTasks);
-        console.log('Using AI-generated tasks:', aiTasks.length);
       }
     }
   }, [isAuthenticated, gmailEmails, aiTasks, isGeminiConnected]);
+
+  // Trigger refetch when Gemini service becomes available
+  useEffect(() => {
+    console.log('Gemini service effect - isAuthenticated:', isAuthenticated, 'geminiService available:', !!geminiService);
+    if (isAuthenticated && geminiService) {
+      console.log('Gemini service became available, triggering email refetch');
+      refetch();
+    }
+  }, [geminiService, isAuthenticated, refetch]);
 
   const handleEmailSelect = (email: Email) => {
     setSelectedEmail(email);
