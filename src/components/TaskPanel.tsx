@@ -120,7 +120,7 @@ const TaskPanel: React.FC<TaskPanelProps> = ({
       <div className="p-4 border-b border-slate-200 bg-white/60 backdrop-blur-sm">
         <h2 className="text-lg font-semibold text-slate-800 mb-1">Tasks</h2>
         <p className="text-sm text-slate-600">
-          {activeTasks.length} active • {completedTasks.length} completed
+          {activeTasks.length} active • {completedTasks.length} completed!
         </p>
       </div>
 
