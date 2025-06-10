@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+
+import { useEffect, useState, useCallback } from 'react';
 import { Email, Task } from '../types';
 import { gmailService } from '../services/gmailService';
 import { GeminiService } from '../services/geminiService';
@@ -9,7 +10,7 @@ export const useGmailEmails = (geminiService?: GeminiService, autoCreateTasks: b
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   
-  const fetchEmails = async () => {
+  const fetchEmails = useCallback(async () => {
     if (!gmailService.checkAuth()) {
       setError('Not authenticated');
       return;
@@ -126,7 +127,7 @@ export const useGmailEmails = (geminiService?: GeminiService, autoCreateTasks: b
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [geminiService, autoCreateTasks]);
   
   useEffect(() => {
     console.log('useGmailEmails effect triggered, authenticated:', gmailService.checkAuth(), 'gemini service:', !!geminiService);
@@ -134,7 +135,7 @@ export const useGmailEmails = (geminiService?: GeminiService, autoCreateTasks: b
     if (gmailService.checkAuth()) {
       fetchEmails();
     }
-  }, [geminiService, autoCreateTasks]);
+  }, [geminiService, autoCreateTasks, fetchEmails]);
   
   return {
     emails,
