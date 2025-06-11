@@ -34,6 +34,7 @@ export interface Task {
   priority: 'low' | 'medium' | 'high';
   completed: boolean;
   daysLeft: number;
+  label: 'auto-reply-ready' | 'deadline-approaching' | 'action-required' | 'follow-up' | 'meeting-scheduled' | 'document-needed' | 'waiting-response' | 'urgent';
 }
 
 export interface GmailAuth {

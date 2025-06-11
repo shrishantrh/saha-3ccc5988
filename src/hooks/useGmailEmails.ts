@@ -4,6 +4,52 @@ import { Email, Task } from '../types';
 import { gmailService } from '../services/gmailService';
 import { GeminiService } from '../services/geminiService';
 
+const generateTaskLabel = (task: any, email: Email, daysLeft: number): Task['label'] => {
+  // Auto-reply ready for emails with positive sentiment and low urgency
+  if (email.aiAnalysis?.sentiment === 'positive' && 
+      email.aiAnalysis?.urgency && email.aiAnalysis.urgency <= 3 &&
+      email.aiAnalysis?.estimatedResponseTime?.includes('1 day')) {
+    return 'auto-reply-ready';
+  }
+  
+  // Deadline approaching for tasks due soon
+  if (daysLeft <= 1) {
+    return 'deadline-approaching';
+  }
+  
+  // Urgent for high priority tasks with short deadlines
+  if (task.priority === 'high' && daysLeft <= 3) {
+    return 'urgent';
+  }
+  
+  // Action required for emails that explicitly need action
+  if (email.aiAnalysis?.actionRequired) {
+    return 'action-required';
+  }
+  
+  // Meeting scheduled for tasks that mention meetings or calls
+  if (task.title.toLowerCase().includes('meeting') || 
+      task.title.toLowerCase().includes('call') ||
+      task.title.toLowerCase().includes('schedule')) {
+    return 'meeting-scheduled';
+  }
+  
+  // Document needed for tasks about submissions or documents
+  if (task.title.toLowerCase().includes('submit') ||
+      task.title.toLowerCase().includes('document') ||
+      task.title.toLowerCase().includes('application')) {
+    return 'document-needed';
+  }
+  
+  // Follow-up for medium priority tasks
+  if (task.priority === 'medium') {
+    return 'follow-up';
+  }
+  
+  // Default to waiting response
+  return 'waiting-response';
+};
+
 export const useGmailEmails = (geminiService?: GeminiService, autoCreateTasks: boolean = true) => {
   const [emails, setEmails] = useState<Email[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -100,6 +146,7 @@ export const useGmailEmails = (geminiService?: GeminiService, autoCreateTasks: b
               const today = new Date();
               const diffTime = dueDate.getTime() - today.getTime();
               const daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+              const finalDaysLeft = Math.max(0, daysLeft);
               
               return {
                 id: `${email.id}-task-${index}`,
@@ -108,7 +155,8 @@ export const useGmailEmails = (geminiService?: GeminiService, autoCreateTasks: b
                 dueDate: task.dueDate,
                 priority: task.priority,
                 completed: false,
-                daysLeft: Math.max(0, daysLeft)
+                daysLeft: finalDaysLeft,
+                label: generateTaskLabel(task, email, finalDaysLeft)
               };
             });
             
