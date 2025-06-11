@@ -1,17 +1,25 @@
 
 import React, { useState } from 'react';
-import { Send, X, Minimize2 } from 'lucide-react';
+import { Send, X, Minimize2, Bot, Loader2 } from 'lucide-react';
 import { Email } from '../types';
+import { GeminiService } from '../services/geminiService';
 
 interface ReplyInterfaceProps {
   email: Email;
   onSend: (message: string) => void;
   onCancel: () => void;
+  geminiService?: GeminiService;
 }
 
-const ReplyInterface: React.FC<ReplyInterfaceProps> = ({ email, onSend, onCancel }) => {
+const ReplyInterface: React.FC<ReplyInterfaceProps> = ({ 
+  email, 
+  onSend, 
+  onCancel, 
+  geminiService 
+}) => {
   const [message, setMessage] = useState('');
   const [isMinimized, setIsMinimized] = useState(false);
+  const [isGeneratingAI, setIsGeneratingAI] = useState(false);
 
   const handleSend = () => {
     if (message.trim()) {
@@ -23,6 +31,25 @@ const ReplyInterface: React.FC<ReplyInterfaceProps> = ({ email, onSend, onCancel
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
       handleSend();
+    }
+  };
+
+  const generateAIReply = async () => {
+    if (!geminiService) return;
+    
+    setIsGeneratingAI(true);
+    try {
+      const aiReply = await geminiService.generateReply({
+        subject: email.subject,
+        body: email.body,
+        sender: email.sender
+      });
+      setMessage(aiReply);
+    } catch (error) {
+      console.error('Error generating AI reply:', error);
+      setMessage('Thank you for your email. I will review it and get back to you soon.');
+    } finally {
+      setIsGeneratingAI(false);
     }
   };
 
@@ -50,6 +77,20 @@ const ReplyInterface: React.FC<ReplyInterfaceProps> = ({ email, onSend, onCancel
             <span className="text-sm text-slate-500">Re: {email.subject}</span>
           </div>
           <div className="flex items-center space-x-2">
+            {geminiService && (
+              <button
+                onClick={generateAIReply}
+                disabled={isGeneratingAI}
+                className="flex items-center space-x-2 px-3 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200 disabled:opacity-50"
+              >
+                {isGeneratingAI ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Bot className="w-4 h-4" />
+                )}
+                <span className="text-sm">AI Reply</span>
+              </button>
+            )}
             <button
               onClick={() => setIsMinimized(true)}
               className="p-1 text-slate-400 hover:text-slate-600 transition-colors"
@@ -87,7 +128,11 @@ const ReplyInterface: React.FC<ReplyInterfaceProps> = ({ email, onSend, onCancel
           
           <div className="flex items-center justify-between mt-4">
             <div className="text-sm text-slate-500">
-              Tip: Use Ctrl/Cmd + Enter to send quickly
+              {geminiService ? (
+                <span>💡 Use AI Reply for quick, intelligent responses • Ctrl/Cmd + Enter to send</span>
+              ) : (
+                <span>Tip: Use Ctrl/Cmd + Enter to send quickly</span>
+              )}
             </div>
             <div className="flex items-center space-x-3">
               <button 

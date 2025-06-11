@@ -144,6 +144,12 @@ const Index = () => {
     setTasks(prev => prev.filter(task => task.id !== taskId));
   };
 
+  const handleTaskUpdate = (taskId: string, updates: Partial<Task>) => {
+    setTasks(prev => prev.map(task =>
+      task.id === taskId ? { ...task, ...updates } : task
+    ));
+  };
+
   const handleTaskPriorityChange = (taskId: string) => {
     setTasks(prev => prev.map(task => {
       if (task.id === taskId) {
@@ -273,6 +279,7 @@ const Index = () => {
                 onTaskComplete={handleTaskComplete}
                 onTaskDelete={handleTaskDelete}
                 onTaskPriorityChange={handleTaskPriorityChange}
+                onTaskUpdate={handleTaskUpdate}
                 onEmailSelect={handleEmailSelect}
               />
             </div>
@@ -284,6 +291,7 @@ const Index = () => {
               email={replyTo}
               onSend={handleSendReply}
               onCancel={() => setReplyTo(null)}
+              geminiService={geminiService}
             />
           )}
 
@@ -324,3 +332,5 @@ const Index = () => {
 };
 
 export default Index;
+
+}
