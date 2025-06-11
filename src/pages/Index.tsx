@@ -59,7 +59,8 @@ const mockTasks: Task[] = [
     dueDate: '2024-05-25',
     priority: 'high',
     completed: false,
-    daysLeft: 2
+    daysLeft: 2,
+    label: 'deadline-approaching'
   },
   {
     id: '2',
@@ -68,7 +69,8 @@ const mockTasks: Task[] = [
     dueDate: '2024-05-27',
     priority: 'medium',
     completed: false,
-    daysLeft: 4
+    daysLeft: 4,
+    label: 'meeting-scheduled'
   },
   {
     id: '3',
@@ -77,7 +79,8 @@ const mockTasks: Task[] = [
     dueDate: '2024-05-26',
     priority: 'low',
     completed: false,
-    daysLeft: 3
+    daysLeft: 3,
+    label: 'follow-up'
   }
 ];
 
