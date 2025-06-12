@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Mail, Clock, AlertCircle, CheckCircle, X, MoreHorizontal, Settings as SettingsIcon, MessageCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -229,10 +228,10 @@ const Index = () => {
 
       {isAuthenticated ? (
         <>
-          {/* Main Layout */}
+          {/* Main Layout with Calendar Panel */}
           <div className="flex h-[calc(100vh-88px)]">
             {/* Email List Panel - Fixed width */}
-            <div className="w-96 bg-white/70 backdrop-blur-sm border-r border-slate-200 shadow-sm">
+            <div className="w-80 bg-white/70 backdrop-blur-sm border-r border-slate-200 shadow-sm">
               {isLoading ? (
                 <div className="flex flex-col items-center justify-center h-full p-6">
                   <div className="w-10 h-10 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mb-4"></div>
@@ -263,7 +262,7 @@ const Index = () => {
             </div>
 
             {/* Email Detail Panel - Flexible width with max constraint */}
-            <div className="flex-1 bg-white/50 backdrop-blur-sm max-w-4xl">
+            <div className="flex-1 bg-white/50 backdrop-blur-sm max-w-3xl">
               {selectedEmail ? (
                 <EmailDetail 
                   email={selectedEmail} 
@@ -280,6 +279,16 @@ const Index = () => {
                   </div>
                 </div>
               )}
+            </div>
+
+            {/* Calendar Panel - Fixed width */}
+            <div className="w-80 bg-white/70 backdrop-blur-sm border-r border-slate-200 shadow-sm">
+              <CalendarPanel 
+                tasks={tasks}
+                onCreateEvent={(eventData) => {
+                  console.log('Event created:', eventData);
+                }}
+              />
             </div>
 
             {/* Task Panel - Fixed width */}
