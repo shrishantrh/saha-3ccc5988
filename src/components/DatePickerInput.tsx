@@ -19,6 +19,28 @@ interface DatePickerInputProps {
 }
 
 const DatePickerInput: React.FC<DatePickerInputProps> = ({ date, onDateChange, className, children }) => {
+  // Ensure we're working with a proper Date object and handle timezone issues
+  const normalizeDate = (inputDate: Date | string): Date => {
+    if (typeof inputDate === 'string') {
+      // Create date at noon to avoid timezone issues
+      const [year, month, day] = inputDate.split('-').map(Number);
+      return new Date(year, month - 1, day, 12, 0, 0);
+    }
+    return new Date(inputDate);
+  };
+
+  const normalizedDate = normalizeDate(date);
+
+  const handleDateSelect = (selectedDate: Date | undefined) => {
+    if (selectedDate) {
+      // Ensure the selected date is normalized to avoid timezone issues
+      const normalizedSelected = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate(), 12, 0, 0);
+      onDateChange(normalizedSelected);
+    } else {
+      onDateChange(undefined);
+    }
+  };
+
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -34,15 +56,15 @@ const DatePickerInput: React.FC<DatePickerInputProps> = ({ date, onDateChange, c
             )}
           >
             <CalendarIcon className="w-3 h-3 mr-1" />
-            {format(date, 'MMM dd')}
+            {format(normalizedDate, 'MMM dd')}
           </Button>
         )}
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0" align="start">
         <Calendar
           mode="single"
-          selected={date}
-          onSelect={onDateChange}
+          selected={normalizedDate}
+          onSelect={handleDateSelect}
           initialFocus
           className="p-3 pointer-events-auto"
         />
