@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { CheckCircle, Circle, Mail, X, AlertTriangle, Clock, Bot, Calendar, FileText, MessageSquare, Zap, Timer } from 'lucide-react';
 import { Task, Email } from '../types';
@@ -11,6 +10,7 @@ interface TaskPanelProps {
   onTaskDelete: (taskId: string) => void;
   onTaskPriorityChange: (taskId: string) => void;
   onEmailSelect: (email: Email) => void;
+  onTaskDateChange?: (taskId: string, newDate: Date) => void;
 }
 
 const priorityColors = {
@@ -74,7 +74,8 @@ const TaskPanel: React.FC<TaskPanelProps> = ({
   onTaskComplete, 
   onTaskDelete, 
   onTaskPriorityChange, 
-  onEmailSelect 
+  onEmailSelect,
+  onTaskDateChange
 }) => {
   const activeTasks = tasks.filter(task => !task.completed);
   const completedTasks = tasks.filter(task => task.completed);
@@ -84,9 +85,8 @@ const TaskPanel: React.FC<TaskPanelProps> = ({
   };
 
   const handleDateChange = (taskId: string, newDate: Date | undefined) => {
-    if (newDate) {
-      // For now, we'll just log this - you'll need to implement the actual date change logic
-      console.log(`Changing task ${taskId} due date to ${newDate.toISOString()}`);
+    if (newDate && onTaskDateChange) {
+      onTaskDateChange(taskId, newDate);
     }
   };
 
@@ -151,13 +151,6 @@ const TaskPanel: React.FC<TaskPanelProps> = ({
               </div>
               
               <div className="flex items-center space-x-1">
-                {!completed && (
-                  <DatePickerInput
-                    date={new Date(task.dueDate)}
-                    onDateChange={(date) => handleDateChange(task.id, date)}
-                  />
-                )}
-                
                 {sourceEmail && (
                   <button
                     onClick={() => onEmailSelect(sourceEmail)}
@@ -178,15 +171,20 @@ const TaskPanel: React.FC<TaskPanelProps> = ({
             </div>
 
             {!completed && (
-              <div className="mt-1">
-                <span className={`text-xs ${
-                  task.daysLeft <= 1 ? 'text-red-600 font-medium' : 
-                  task.daysLeft <= 3 ? 'text-yellow-600' : 'text-slate-500'
-                }`}>
-                  {task.daysLeft === 0 ? 'Due today' : 
-                   task.daysLeft === 1 ? '1 day left' : 
-                   `${task.daysLeft} days left`}
-                </span>
+              <div className="mt-1 flex items-center justify-between">
+                <DatePickerInput
+                  date={new Date(task.dueDate)}
+                  onDateChange={(date) => handleDateChange(task.id, date)}
+                >
+                  <span className={`text-xs cursor-pointer hover:underline ${
+                    task.daysLeft <= 1 ? 'text-red-600 font-medium' : 
+                    task.daysLeft <= 3 ? 'text-yellow-600' : 'text-slate-500'
+                  }`}>
+                    {task.daysLeft === 0 ? 'Due today' : 
+                     task.daysLeft === 1 ? '1 day left' : 
+                     `${task.daysLeft} days left`}
+                  </span>
+                </DatePickerInput>
               </div>
             )}
           </div>

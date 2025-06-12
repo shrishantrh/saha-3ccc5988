@@ -156,6 +156,21 @@ const Index = () => {
     }));
   };
 
+  const handleTaskDateChange = (taskId: string, newDate: Date) => {
+    setTasks(prev => prev.map(task => {
+      if (task.id === taskId) {
+        const timeDiff = newDate.getTime() - new Date().getTime();
+        const daysLeft = Math.ceil(timeDiff / (1000 * 3600 * 24));
+        return { 
+          ...task, 
+          dueDate: newDate.toISOString().split('T')[0],
+          daysLeft: Math.max(0, daysLeft)
+        };
+      }
+      return task;
+    }));
+  };
+
   const handleSendReply = async (message: string) => {
     if (replyTo) {
       console.log(`Sending reply to ${replyTo.sender}: ${message}`);
@@ -274,6 +289,7 @@ const Index = () => {
                 onTaskDelete={handleTaskDelete}
                 onTaskPriorityChange={handleTaskPriorityChange}
                 onEmailSelect={handleEmailSelect}
+                onTaskDateChange={handleTaskDateChange}
               />
             </div>
           </div>

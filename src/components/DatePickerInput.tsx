@@ -15,23 +15,28 @@ interface DatePickerInputProps {
   date: Date;
   onDateChange: (date: Date | undefined) => void;
   className?: string;
+  children?: React.ReactNode;
 }
 
-const DatePickerInput: React.FC<DatePickerInputProps> = ({ date, onDateChange, className }) => {
+const DatePickerInput: React.FC<DatePickerInputProps> = ({ date, onDateChange, className, children }) => {
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button
-          variant="ghost"
-          size="sm"
-          className={cn(
-            "h-6 px-2 text-xs font-normal justify-start text-slate-600 hover:text-slate-800 hover:bg-slate-100",
-            className
-          )}
-        >
-          <CalendarIcon className="w-3 h-3 mr-1" />
-          {format(date, 'MMM dd')}
-        </Button>
+        {children ? (
+          <div className="cursor-pointer">{children}</div>
+        ) : (
+          <Button
+            variant="ghost"
+            size="sm"
+            className={cn(
+              "h-6 px-2 text-xs font-normal justify-start text-slate-600 hover:text-slate-800 hover:bg-slate-100",
+              className
+            )}
+          >
+            <CalendarIcon className="w-3 h-3 mr-1" />
+            {format(date, 'MMM dd')}
+          </Button>
+        )}
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0" align="start">
         <Calendar
