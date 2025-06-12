@@ -2,6 +2,7 @@
 import React from 'react';
 import { CheckCircle, Circle, Mail, X, AlertTriangle, Clock, Bot, Calendar, FileText, MessageSquare, Zap, Timer } from 'lucide-react';
 import { Task, Email } from '../types';
+import DatePickerInput from './DatePickerInput';
 
 interface TaskPanelProps {
   tasks: Task[];
@@ -13,9 +14,9 @@ interface TaskPanelProps {
 }
 
 const priorityColors = {
-  'high': 'bg-red-100 text-red-700 border-red-300',
-  'medium': 'bg-yellow-100 text-yellow-700 border-yellow-300',
-  'low': 'bg-green-100 text-green-700 border-green-300'
+  'high': 'text-red-600',
+  'medium': 'text-yellow-600',
+  'low': 'text-green-600'
 };
 
 const priorityIcons = {
@@ -26,43 +27,43 @@ const priorityIcons = {
 
 const labelConfig = {
   'auto-reply-ready': {
-    label: 'Auto Reply Ready',
-    color: 'bg-emerald-100 text-emerald-700 border-emerald-300',
+    label: 'Auto Reply',
+    color: 'text-emerald-600',
     icon: Bot
   },
   'deadline-approaching': {
-    label: 'Deadline Soon',
-    color: 'bg-orange-100 text-orange-700 border-orange-300',
+    label: 'Deadline',
+    color: 'text-orange-600',
     icon: Timer
   },
   'action-required': {
-    label: 'Action Required',
-    color: 'bg-blue-100 text-blue-700 border-blue-300',
+    label: 'Action',
+    color: 'text-blue-600',
     icon: Zap
   },
   'follow-up': {
     label: 'Follow Up',
-    color: 'bg-purple-100 text-purple-700 border-purple-300',
+    color: 'text-purple-600',
     icon: MessageSquare
   },
   'meeting-scheduled': {
-    label: 'Meeting/Call',
-    color: 'bg-indigo-100 text-indigo-700 border-indigo-300',
+    label: 'Meeting',
+    color: 'text-indigo-600',
     icon: Calendar
   },
   'document-needed': {
-    label: 'Document Needed',
-    color: 'bg-amber-100 text-amber-700 border-amber-300',
+    label: 'Document',
+    color: 'text-amber-600',
     icon: FileText
   },
   'waiting-response': {
-    label: 'Waiting Response',
-    color: 'bg-slate-100 text-slate-700 border-slate-300',
+    label: 'Waiting',
+    color: 'text-slate-600',
     icon: Clock
   },
   'urgent': {
     label: 'Urgent',
-    color: 'bg-red-100 text-red-700 border-red-300',
+    color: 'text-red-600',
     icon: AlertTriangle
   }
 };
@@ -82,6 +83,13 @@ const TaskPanel: React.FC<TaskPanelProps> = ({
     return emails.find(email => email.id === emailId);
   };
 
+  const handleDateChange = (taskId: string, newDate: Date | undefined) => {
+    if (newDate) {
+      // For now, we'll just log this - you'll need to implement the actual date change logic
+      console.log(`Changing task ${taskId} due date to ${newDate.toISOString()}`);
+    }
+  };
+
   // Group active tasks by label
   const groupedTasks = activeTasks.reduce((acc, task) => {
     if (!acc[task.label]) {
@@ -98,10 +106,10 @@ const TaskPanel: React.FC<TaskPanelProps> = ({
     const LabelIcon = labelInfo.icon;
 
     return (
-      <div className={`p-3 border border-slate-200 rounded-lg bg-white/80 backdrop-blur-sm transition-all duration-200 hover:shadow-md ${
+      <div className={`p-2 border border-slate-200 rounded-md bg-white/80 backdrop-blur-sm transition-all duration-200 hover:shadow-sm ${
         completed ? 'opacity-60' : ''
       }`}>
-        <div className="flex items-start space-x-3">
+        <div className="flex items-start space-x-2">
           <button
             onClick={() => onTaskComplete(task.id)}
             className={`mt-0.5 transition-colors ${
@@ -109,51 +117,47 @@ const TaskPanel: React.FC<TaskPanelProps> = ({
             }`}
           >
             {completed ? (
-              <CheckCircle className="w-5 h-5" />
+              <CheckCircle className="w-4 h-4" />
             ) : (
-              <Circle className="w-5 h-5" />
+              <Circle className="w-4 h-4" />
             )}
           </button>
           
           <div className="flex-1 min-w-0">
-            <h4 className={`text-sm font-medium mb-2 ${
+            <h4 className={`text-sm font-medium mb-1 leading-tight ${
               completed ? 'line-through text-slate-500' : 'text-slate-900'
             }`}>
               {task.title}
             </h4>
             
-            {!completed && (
-              <div className="mb-2">
-                <span className={`inline-flex items-center space-x-1 px-2 py-1 rounded-md text-xs font-medium border ${labelInfo.color}`}>
-                  <LabelIcon className="w-3 h-3" />
-                  <span>{labelInfo.label}</span>
-                </span>
-              </div>
-            )}
-            
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
+                {!completed && (
+                  <span className={`inline-flex items-center space-x-1 text-xs font-medium ${labelInfo.color}`}>
+                    <LabelIcon className="w-3 h-3" />
+                    <span>{labelInfo.label}</span>
+                  </span>
+                )}
+                
                 <button
                   onClick={() => onTaskPriorityChange(task.id)}
-                  className={`inline-flex items-center space-x-1 px-2 py-1 rounded-md text-xs font-medium border cursor-pointer transition-colors hover:opacity-80 ${
+                  className={`inline-flex items-center space-x-1 text-xs font-medium cursor-pointer transition-colors hover:opacity-80 ${
                     priorityColors[task.priority]
                   }`}
                 >
                   <PriorityIcon className="w-3 h-3" />
                   <span className="capitalize">{task.priority}</span>
                 </button>
-                
-                <span className={`text-xs ${
-                  task.daysLeft <= 1 ? 'text-red-600 font-medium' : 
-                  task.daysLeft <= 3 ? 'text-yellow-600' : 'text-slate-500'
-                }`}>
-                  {task.daysLeft === 0 ? 'Due today' : 
-                   task.daysLeft === 1 ? '1 day left' : 
-                   `${task.daysLeft} days left`}
-                </span>
               </div>
               
               <div className="flex items-center space-x-1">
+                {!completed && (
+                  <DatePickerInput
+                    date={new Date(task.dueDate)}
+                    onDateChange={(date) => handleDateChange(task.id, date)}
+                  />
+                )}
+                
                 {sourceEmail && (
                   <button
                     onClick={() => onEmailSelect(sourceEmail)}
@@ -172,6 +176,19 @@ const TaskPanel: React.FC<TaskPanelProps> = ({
                 </button>
               </div>
             </div>
+
+            {!completed && (
+              <div className="mt-1">
+                <span className={`text-xs ${
+                  task.daysLeft <= 1 ? 'text-red-600 font-medium' : 
+                  task.daysLeft <= 3 ? 'text-yellow-600' : 'text-slate-500'
+                }`}>
+                  {task.daysLeft === 0 ? 'Due today' : 
+                   task.daysLeft === 1 ? '1 day left' : 
+                   `${task.daysLeft} days left`}
+                </span>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -187,7 +204,7 @@ const TaskPanel: React.FC<TaskPanelProps> = ({
         </p>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-6">
+      <div className="flex-1 overflow-y-auto p-3 space-y-4">
         {/* Active Tasks - Grouped by Label */}
         {Object.entries(groupedTasks).map(([label, labelTasks]) => {
           const labelInfo = labelConfig[label as keyof typeof labelConfig];
@@ -195,14 +212,11 @@ const TaskPanel: React.FC<TaskPanelProps> = ({
           
           return (
             <div key={label}>
-              <h3 className="text-sm font-medium text-slate-700 mb-3 flex items-center">
-                <span className={`inline-flex items-center space-x-1 px-2 py-1 rounded-md text-xs font-medium border mr-2 ${labelInfo.color}`}>
-                  <LabelIcon className="w-3 h-3" />
-                  <span>{labelInfo.label}</span>
-                </span>
-                <span className="text-slate-500">({labelTasks.length})</span>
+              <h3 className="text-xs font-medium text-slate-600 mb-2 flex items-center uppercase tracking-wide">
+                <LabelIcon className="w-3 h-3 mr-1" />
+                {labelInfo.label} ({labelTasks.length})
               </h3>
-              <div className="space-y-3 ml-4">
+              <div className="space-y-2">
                 {labelTasks.map((task) => (
                   <TaskItem key={task.id} task={task} />
                 ))}
@@ -214,11 +228,11 @@ const TaskPanel: React.FC<TaskPanelProps> = ({
         {/* Completed Tasks */}
         {completedTasks.length > 0 && (
           <div>
-            <h3 className="text-sm font-medium text-slate-700 mb-3 flex items-center">
-              <CheckCircle className="w-4 h-4 mr-2 text-green-600" />
+            <h3 className="text-xs font-medium text-slate-600 mb-2 flex items-center uppercase tracking-wide">
+              <CheckCircle className="w-3 h-3 mr-1 text-green-600" />
               Completed ({completedTasks.length})
             </h3>
-            <div className="space-y-3">
+            <div className="space-y-2">
               {completedTasks.map((task) => (
                 <TaskItem key={task.id} task={task} completed />
               ))}
