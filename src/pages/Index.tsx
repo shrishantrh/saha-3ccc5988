@@ -309,6 +309,7 @@ const Index = () => {
           <EmailChat
             geminiService={geminiService}
             emails={emails}
+            tasks={tasks}
             isOpen={isChatOpen}
             onClose={() => setIsChatOpen(false)}
           />

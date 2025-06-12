@@ -53,17 +53,20 @@ class GoogleCalendarService {
     return !!this.accessToken;
   }
 
-  private async makeCalendarRequest(endpoint: string): Promise<any> {
+  private async makeCalendarRequest(endpoint: string, options?: RequestInit): Promise<any> {
     if (!this.accessToken) {
       throw new Error('Not authenticated with Google Calendar');
     }
 
-    const response = await fetch(`https://www.googleapis.com/calendar/v3/${endpoint}`, {
+    const requestOptions: RequestInit = {
       headers: {
         'Authorization': `Bearer ${this.accessToken}`,
         'Content-Type': 'application/json',
       },
-    });
+      ...options,
+    };
+
+    const response = await fetch(`https://www.googleapis.com/calendar/v3/${endpoint}`, requestOptions);
 
     if (!response.ok) {
       throw new Error(`Calendar API error: ${response.status}`);
