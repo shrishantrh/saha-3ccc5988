@@ -1,9 +1,11 @@
+
 import React, { useState, useEffect } from 'react';
 import { Mail, Clock, AlertCircle, CheckCircle, X, MoreHorizontal, Settings as SettingsIcon, MessageCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import EmailList from '../components/EmailList';
 import EmailDetail from '../components/EmailDetail';
 import TaskPanel from '../components/TaskPanel';
+import CalendarPanel from '../components/CalendarPanel';
 import ReplyInterface from '../components/ReplyInterface';
 import EmailChat from '../components/EmailChat';
 import { Email, Task } from '../types';
