@@ -12,42 +12,56 @@ export const useCalendar = (tasks: Task[]) => {
   const [insights, setInsights] = useState<CalendarInsight | null>(null);
 
   useEffect(() => {
-    setIsAuthenticated(googleCalendarService.checkAuth());
+    console.log('useCalendar: Checking initial authentication...');
+    const authStatus = googleCalendarService.checkAuth();
+    console.log('useCalendar: Initial auth status:', authStatus);
+    setIsAuthenticated(authStatus);
   }, []);
 
   const login = async () => {
+    console.log('useCalendar: Starting login process...');
     try {
       setIsLoading(true);
       setError(null);
       await googleCalendarService.authenticateCalendar();
+      console.log('useCalendar: Authentication successful');
       setIsAuthenticated(true);
       await fetchEvents();
     } catch (err) {
-      setError('Failed to connect to Google Calendar');
-      console.error('Calendar auth error:', err);
+      const errorMessage = 'Failed to connect to Google Calendar';
+      console.error('useCalendar: Calendar auth error:', err);
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
   };
 
   const logout = async () => {
+    console.log('useCalendar: Starting logout process...');
     try {
       await googleCalendarService.logout();
       setIsAuthenticated(false);
       setEvents([]);
       setInsights(null);
+      console.log('useCalendar: Logout successful');
     } catch (err) {
-      console.error('Calendar logout error:', err);
+      console.error('useCalendar: Calendar logout error:', err);
     }
   };
 
   const fetchEvents = async (timeMin?: Date, timeMax?: Date) => {
-    if (!isAuthenticated) return;
+    console.log('useCalendar: Fetching events, authenticated:', isAuthenticated);
+    if (!isAuthenticated) {
+      console.log('useCalendar: Not authenticated, skipping fetch');
+      return;
+    }
 
     try {
       setIsLoading(true);
       setError(null);
+      console.log('useCalendar: Calling googleCalendarService.fetchEvents...');
       const googleEvents = await googleCalendarService.fetchEvents(timeMin, timeMax);
+      console.log('useCalendar: Received events:', googleEvents.length);
       
       const convertedEvents: CalendarEvent[] = googleEvents.map(event => ({
         id: event.id,
@@ -60,17 +74,20 @@ export const useCalendar = (tasks: Task[]) => {
         attendees: event.attendees?.map((a: any) => a.email) || []
       }));
 
+      console.log('useCalendar: Converted events:', convertedEvents.length);
       setEvents(convertedEvents);
       generateInsights(convertedEvents, tasks);
     } catch (err) {
-      setError('Failed to fetch calendar events');
-      console.error('Fetch events error:', err);
+      const errorMessage = 'Failed to fetch calendar events';
+      console.error('useCalendar: Fetch events error:', err);
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
   };
 
   const generateInsights = (calendarEvents: CalendarEvent[], userTasks: Task[]) => {
+    console.log('useCalendar: Generating insights for', calendarEvents.length, 'events and', userTasks.length, 'tasks');
     const now = new Date();
     const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
     
@@ -147,11 +164,14 @@ export const useCalendar = (tasks: Task[]) => {
       };
     });
 
-    setInsights({
+    const newInsights = {
       freeSlots,
       suggestedTasks,
       busyPeriods
-    });
+    };
+
+    console.log('useCalendar: Generated insights:', newInsights);
+    setInsights(newInsights);
   };
 
   const createEvent = async (eventData: {
@@ -161,17 +181,20 @@ export const useCalendar = (tasks: Task[]) => {
     end: Date;
     location?: string;
   }) => {
+    console.log('useCalendar: Creating event:', eventData);
     try {
       setIsLoading(true);
       const success = await googleCalendarService.createEvent(eventData);
+      console.log('useCalendar: Create event result:', success);
       if (success) {
         await fetchEvents(); // Refresh events
         return true;
       }
       return false;
     } catch (err) {
-      setError('Failed to create calendar event');
-      console.error('Create event error:', err);
+      const errorMessage = 'Failed to create calendar event';
+      console.error('useCalendar: Create event error:', err);
+      setError(errorMessage);
       return false;
     } finally {
       setIsLoading(false);

@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Calendar, ChevronLeft, ChevronRight, Plus, Clock, MapPin, Users, Zap, AlertCircle } from 'lucide-react';
+import { Calendar, ChevronLeft, ChevronRight, Plus, Clock, MapPin, Users, Zap, AlertCircle, Link } from 'lucide-react';
 import { Button } from './ui/button';
 import { useCalendar } from '../hooks/useCalendar';
 import { Task } from '../types';
@@ -21,6 +21,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({ tasks }) => {
 
   // Fetch events when calendar becomes authenticated or date changes
   useEffect(() => {
+    console.log('CalendarView: Authentication status changed:', isAuthenticated);
     if (isAuthenticated) {
       console.log('Calendar authenticated, fetching events...');
       fetchEvents();
@@ -44,7 +45,11 @@ const CalendarView: React.FC<CalendarViewProps> = ({ tasks }) => {
   };
 
   const handleCreateQuickEvent = async (suggestion: any) => {
-    if (!insights?.freeSlots.length) return;
+    console.log('Creating quick event:', suggestion);
+    if (!insights?.freeSlots.length) {
+      console.log('No free slots available');
+      return;
+    }
     
     const freeSlot = insights.freeSlots[0];
     const eventData = {
@@ -54,11 +59,22 @@ const CalendarView: React.FC<CalendarViewProps> = ({ tasks }) => {
       description: `Auto-scheduled from Saha AI - ${suggestion.reason}`
     };
 
+    console.log('Event data:', eventData);
     const success = await createEvent(eventData);
     if (success) {
       console.log('Event created successfully');
     } else {
       console.error('Failed to create event');
+    }
+  };
+
+  const handleGoogleCalendarLogin = async () => {
+    console.log('Google Calendar login clicked');
+    try {
+      await login();
+      console.log('Google Calendar login completed');
+    } catch (error) {
+      console.error('Google Calendar login failed:', error);
     }
   };
 
@@ -74,15 +90,30 @@ const CalendarView: React.FC<CalendarViewProps> = ({ tasks }) => {
             Get AI-powered scheduling suggestions and automatically create events based on your free time and email analysis.
           </p>
           <Button
-            onClick={login}
+            onClick={handleGoogleCalendarLogin}
             disabled={isLoading}
             className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg"
             size="lg"
           >
-            {isLoading ? 'Connecting...' : 'Connect Google Calendar'}
+            {isLoading ? (
+              <div className="flex items-center space-x-2">
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                <span>Connecting...</span>
+              </div>
+            ) : (
+              <div className="flex items-center space-x-2">
+                <Link className="w-4 h-4" />
+                <span>Connect Google Calendar</span>
+              </div>
+            )}
           </Button>
           {error && (
-            <p className="text-red-500 text-sm mt-2">{error}</p>
+            <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+              <div className="flex items-center space-x-2">
+                <AlertCircle className="w-4 h-4 text-red-500" />
+                <p className="text-red-700 text-sm">{error}</p>
+              </div>
+            </div>
           )}
         </div>
       </div>

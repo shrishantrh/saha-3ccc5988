@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Mail, Circle, AlertCircle, Clock, CheckSquare, Calendar, Zap, Frown, Meh, Smile, Tag } from 'lucide-react';
 import { Email } from '../types';
@@ -56,24 +57,22 @@ const EmailList: React.FC<EmailListProps> = ({
   };
 
   const handleEmailClick = (email: Email, e: React.MouseEvent) => {
-    // Don't select email if clicking on checkbox
-    const target = e.target as HTMLElement;
-    if ((target as HTMLInputElement).type === 'checkbox' || target.closest('input[type="checkbox"]')) {
-      e.stopPropagation();
-      return;
-    }
+    e.preventDefault();
+    e.stopPropagation();
+    console.log('Email clicked:', email.subject);
     onEmailSelect(email);
   };
 
-  const handleCheckboxClick = (emailId: string, e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleCheckboxChange = (emailId: string, e: React.ChangeEvent<HTMLInputElement>) => {
     e.preventDefault();
-    console.log('Checkbox clicked for email:', emailId);
+    e.stopPropagation();
+    console.log('Checkbox changed for email:', emailId, 'checked:', e.target.checked);
+    
     if (onSelectEmail) {
       try {
         onSelectEmail(emailId);
       } catch (error) {
-        console.error('Error selecting email:', error);
+        console.error('Error in checkbox handler:', error);
       }
     }
   };
@@ -107,7 +106,6 @@ const EmailList: React.FC<EmailListProps> = ({
           return (
             <div
               key={email.id}
-              onClick={(e) => handleEmailClick(email, e)}
               className={`p-4 border-b border-gray-100 cursor-pointer transition-all duration-200 hover:bg-blue-50 group ${
                 selectedEmail?.id === email.id ? 'bg-blue-50 border-l-4 border-l-blue-500 shadow-sm' : ''
               } ${isSelected ? 'bg-blue-25' : ''} ${!email.read ? 'bg-white' : 'bg-gray-25'}`}
@@ -116,12 +114,13 @@ const EmailList: React.FC<EmailListProps> = ({
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center space-x-3 flex-1 min-w-0">
                   {onSelectEmail && (
-                    <div onClick={(e) => handleCheckboxClick(email.id, e)} className="cursor-pointer">
+                    <div className="flex-shrink-0">
                       <input
                         type="checkbox"
                         checked={isSelected}
-                        onChange={() => {}} // Controlled by click handler
-                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 focus:ring-2 w-4 h-4 pointer-events-none"
+                        onChange={(e) => handleCheckboxChange(email.id, e)}
+                        onClick={(e) => e.stopPropagation()}
+                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 focus:ring-2 w-4 h-4"
                       />
                     </div>
                   )}
@@ -148,7 +147,10 @@ const EmailList: React.FC<EmailListProps> = ({
                     )}
                   </div>
                   
-                  <span className={`font-medium text-gray-900 truncate text-sm ${!email.read ? 'font-semibold' : ''}`}>
+                  <span 
+                    className={`font-medium text-gray-900 truncate text-sm ${!email.read ? 'font-semibold' : ''} cursor-pointer`}
+                    onClick={(e) => handleEmailClick(email, e)}
+                  >
                     {email.sender}
                   </span>
                 </div>
@@ -165,12 +167,12 @@ const EmailList: React.FC<EmailListProps> = ({
                 </div>
               </div>
               
-              {/* Subject and Snippet */}
-              <div className="mb-3">
-                <h3 className={`text-sm mb-2 line-clamp-1 ${!email.read ? 'font-semibold' : 'font-medium'} text-gray-900`}>
+              {/* Subject and Snippet - clickable */}
+              <div className="mb-3" onClick={(e) => handleEmailClick(email, e)}>
+                <h3 className={`text-sm mb-2 line-clamp-1 ${!email.read ? 'font-semibold' : 'font-medium'} text-gray-900 cursor-pointer`}>
                   {email.subject}
                 </h3>
-                <p className="text-sm text-gray-600 line-clamp-2 leading-relaxed">
+                <p className="text-sm text-gray-600 line-clamp-2 leading-relaxed cursor-pointer">
                   {email.snippet}
                 </p>
               </div>
@@ -206,9 +208,9 @@ const EmailList: React.FC<EmailListProps> = ({
                 </div>
               </div>
               
-              {/* Enhanced AI Summary */}
-              <div className="p-3 bg-gradient-to-r from-blue-50 via-purple-50 to-blue-50 rounded-lg border border-blue-200">
-                <p className="text-sm text-gray-700 leading-relaxed line-clamp-2">
+              {/* Enhanced AI Summary - clickable */}
+              <div className="p-3 bg-gradient-to-r from-blue-50 via-purple-50 to-blue-50 rounded-lg border border-blue-200" onClick={(e) => handleEmailClick(email, e)}>
+                <p className="text-sm text-gray-700 leading-relaxed line-clamp-2 cursor-pointer">
                   {email.summary}
                 </p>
                 {(email.aiAnalysis as any)?.estimatedResponseTime && (
