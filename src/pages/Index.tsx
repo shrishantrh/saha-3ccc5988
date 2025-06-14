@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Mail, Clock, AlertCircle, CheckCircle, X, MoreHorizontal, Settings as SettingsIcon, MessageCircle } from 'lucide-react';
+import { Mail, Clock, AlertCircle, CheckCircle, X, MoreHorizontal, Settings as SettingsIcon, MessageCircle, Calendar } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import EmailList from '../components/EmailList';
 import EmailDetail from '../components/EmailDetail';
 import TaskPanel from '../components/TaskPanel';
 import CalendarPanel from '../components/CalendarPanel';
+import CalendarView from '../components/CalendarView';
 import ReplyInterface from '../components/ReplyInterface';
 import EmailChat from '../components/EmailChat';
 import { Email, Task } from '../types';
@@ -124,9 +125,6 @@ const Index = () => {
 
   const handleEmailSelect = (email: Email) => {
     setSelectedEmail(email);
-    // Reply interface will only open when explicitly requested via handleReplyClick
-    
-    // Mark as read
     setEmails(prev => prev.map(e => 
       e.id === email.id ? { ...e, read: true } : e
     ));

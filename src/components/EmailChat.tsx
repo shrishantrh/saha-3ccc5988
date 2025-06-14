@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { MessageCircle, Send, Trash2, X, Lightbulb, Sparkles, Calendar, Clock, Zap } from 'lucide-react';
 import { Button } from './ui/button';
@@ -73,12 +72,14 @@ const EmailChat: React.FC<EmailChatProps> = ({ geminiService, emails, tasks, isO
         if (timeMatch) {
           const timeStr = timeMatch[1];
           const [time, period] = timeStr.split(/\s*(am|pm)/i);
-          let [hours, minutes = '0'] = time.split(':');
-          hours = parseInt(hours);
+          let [hoursStr, minutesStr = '0'] = time.split(':');
+          let hours = parseInt(hoursStr, 10);
+          let minutes = parseInt(minutesStr, 10);
+          
           if (period?.toLowerCase() === 'pm' && hours !== 12) hours += 12;
           if (period?.toLowerCase() === 'am' && hours === 12) hours = 0;
           
-          eventDate.setHours(hours, parseInt(minutes), 0, 0);
+          eventDate.setHours(hours, minutes, 0, 0);
         } else {
           // Default to next available free slot
           if (insights?.freeSlots.length > 0) {
