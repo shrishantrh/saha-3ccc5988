@@ -241,7 +241,10 @@ class GmailService {
       body
     ].join('\n');
 
-    const encodedEmail = btoa(email).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    const encodedEmail = btoa(unescape(encodeURIComponent(email)))
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=+$/, '');
 
     const response = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
       method: 'POST',
@@ -255,8 +258,11 @@ class GmailService {
     });
 
     if (!response.ok) {
-      throw new Error('Failed to send email');
+      const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+      throw new Error(`Failed to send email: ${errorData.error?.message || response.statusText}`);
     }
+
+    return response.json();
   }
 }
 

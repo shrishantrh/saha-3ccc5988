@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Mail, Clock, AlertCircle, CheckCircle, X, MoreHorizontal, Settings as SettingsIcon, MessageCircle, Calendar } from 'lucide-react';
+import { Mail, Clock, AlertCircle, CheckCircle, X, MoreHorizontal, Settings as SettingsIcon, MessageCircle, Calendar, Edit, Plus } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import EmailList from '../components/EmailList';
 import EmailDetail from '../components/EmailDetail';
@@ -8,10 +8,15 @@ import CalendarPanel from '../components/CalendarPanel';
 import CalendarView from '../components/CalendarView';
 import ReplyInterface from '../components/ReplyInterface';
 import EmailChat from '../components/EmailChat';
+import EmailComposer from '../components/EmailComposer';
+import EmailSearch from '../components/EmailSearch';
+import EmailBulkActions from '../components/EmailBulkActions';
+import EmailLabels from '../components/EmailLabels';
 import { Email, Task } from '../types';
 import { useGmailAuth } from '../hooks/useGmailAuth';
 import { useGmailEmails } from '../hooks/useGmailEmails';
 import { useGeminiIntegration } from '../hooks/useGeminiIntegration';
+import { gmailService } from '../services/gmailService';
 
 // Mock data for demonstration when not connected to Gmail
 const mockEmails: Email[] = [
@@ -97,6 +102,16 @@ const Index = () => {
   const [replyTo, setReplyTo] = useState<Email | null>(null);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [currentView, setCurrentView] = useState<'email' | 'calendar'>('email');
+  const [isComposerOpen, setIsComposerOpen] = useState(false);
+  const [selectedEmails, setSelectedEmails] = useState<Set<string>>(new Set());
+  const [filteredEmails, setFilteredEmails] = useState<Email[]>([]);
+  const [labels, setLabels] = useState([
+    { id: '1', name: 'Important', color: '#ef4444', count: 5 },
+    { id: '2', name: 'Work', color: '#3b82f6', count: 12 },
+    { id: '3', name: 'Personal', color: '#22c55e', count: 8 },
+    { id: '4', name: 'Follow-up', color: '#eab308', count: 3 }
+  ]);
+  const [selectedLabel, setSelectedLabel] = useState<string>('');
 
   // Update emails and tasks when Gmail emails change OR when Gemini connection changes
   useEffect(() => {
@@ -123,6 +138,19 @@ const Index = () => {
     }
   }, [geminiService, isAuthenticated, refetch]);
 
+  useEffect(() => {
+    // Apply filters and label selection
+    let filtered = emails;
+    
+    if (selectedLabel) {
+      filtered = emails.filter(email => 
+        (email as any).labels?.includes(selectedLabel)
+      );
+    }
+    
+    setFilteredEmails(filtered);
+  }, [emails, selectedLabel]);
+
   const handleEmailSelect = (email: Email) => {
     setSelectedEmail(email);
     setEmails(prev => prev.map(e => 
@@ -134,6 +162,136 @@ const Index = () => {
     setReplyTo(email);
   };
 
+  const handleCompose = () => {
+    setIsComposerOpen(true);
+  };
+
+  const handleSendEmail = async (emailData: any) => {
+    try {
+      if (isAuthenticated) {
+        await gmailService.sendEmail(emailData.to, emailData.subject, emailData.body);
+      }
+      console.log('Email sent:', emailData);
+    } catch (error) {
+      console.error('Failed to send email:', error);
+    }
+  };
+
+  const handleSearch = (filters: any) => {
+    let filtered = emails;
+    
+    if (filters.query) {
+      const query = filters.query.toLowerCase();
+      filtered = filtered.filter(email =>
+        email.subject.toLowerCase().includes(query) ||
+        email.body.toLowerCase().includes(query) ||
+        email.sender.toLowerCase().includes(query)
+      );
+    }
+    
+    if (filters.sender) {
+      filtered = filtered.filter(email =>
+        email.sender.toLowerCase().includes(filters.sender.toLowerCase())
+      );
+    }
+    
+    if (filters.category) {
+      filtered = filtered.filter(email => email.category === filters.category);
+    }
+    
+    if (filters.priority !== 'all') {
+      filtered = filtered.filter(email => email.priority === filters.priority);
+    }
+    
+    if (filters.isUnread) {
+      filtered = filtered.filter(email => !email.read);
+    }
+    
+    setFilteredEmails(filtered);
+  };
+
+  const handleClearSearch = () => {
+    setFilteredEmails(emails);
+  };
+
+  // Bulk Actions
+  const handleSelectEmail = (emailId: string) => {
+    const newSelected = new Set(selectedEmails);
+    if (newSelected.has(emailId)) {
+      newSelected.delete(emailId);
+    } else {
+      newSelected.add(emailId);
+    }
+    setSelectedEmails(newSelected);
+  };
+
+  const handleSelectAll = () => {
+    setSelectedEmails(new Set(filteredEmails.map(email => email.id)));
+  };
+
+  const handleDeselectAll = () => {
+    setSelectedEmails(new Set());
+  };
+
+  const handleBulkMarkAsRead = () => {
+    setEmails(prev => prev.map(email => 
+      selectedEmails.has(email.id) ? { ...email, read: true } : email
+    ));
+    setSelectedEmails(new Set());
+  };
+
+  const handleBulkMarkAsUnread = () => {
+    setEmails(prev => prev.map(email => 
+      selectedEmails.has(email.id) ? { ...email, read: false } : email
+    ));
+    setSelectedEmails(new Set());
+  };
+
+  const handleBulkArchive = () => {
+    setEmails(prev => prev.filter(email => !selectedEmails.has(email.id)));
+    setSelectedEmails(new Set());
+  };
+
+  const handleBulkDelete = () => {
+    setEmails(prev => prev.filter(email => !selectedEmails.has(email.id)));
+    setSelectedEmails(new Set());
+  };
+
+  const handleAddLabel = (labelName: string) => {
+    setEmails(prev => prev.map(email => {
+      if (selectedEmails.has(email.id)) {
+        const emailLabels = (email as any).labels || [];
+        if (!emailLabels.includes(labelName)) {
+          return { ...email, labels: [...emailLabels, labelName] };
+        }
+      }
+      return email;
+    }));
+    setSelectedEmails(new Set());
+  };
+
+  // Label Management
+  const handleCreateLabel = (name: string, color: string) => {
+    const newLabel = {
+      id: Date.now().toString(),
+      name,
+      color,
+      count: 0
+    };
+    setLabels(prev => [...prev, newLabel]);
+  };
+
+  const handleDeleteLabel = (labelId: string) => {
+    setLabels(prev => prev.filter(label => label.id !== labelId));
+  };
+
+  const handleEditLabel = (labelId: string, name: string, color: string) => {
+    setLabels(prev => prev.map(label => 
+      label.id === labelId ? { ...label, name, color } : label
+    ));
+  };
+
+  // Task handlers
   const handleTaskComplete = (taskId: string) => {
     setTasks(prev => prev.map(task =>
       task.id === taskId ? { ...task, completed: !task.completed } : task
@@ -178,6 +336,9 @@ const Index = () => {
     }
   };
 
+  const categories = [...new Set(emails.map(email => email.category))];
+  const displayEmails = filteredEmails.length > 0 ? filteredEmails : emails;
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50">
       {/* Header */}
@@ -203,6 +364,14 @@ const Index = () => {
             </div>
 
             <div className="flex items-center space-x-2">
+              <button
+                onClick={handleCompose}
+                className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200 shadow-md"
+              >
+                <Edit className="w-4 h-4" />
+                <span>Compose</span>
+              </button>
+
               {isGeminiConnected && (
                 <button
                   onClick={() => setIsChatOpen(true)}
@@ -256,60 +425,100 @@ const Index = () => {
           </div>
 
           {currentView === 'email' ? (
-            /* Email Layout */
             <div className="flex h-[calc(100vh-144px)]">
-              {/* Email List Panel - Fixed width */}
-              <div className="w-80 bg-white/70 backdrop-blur-sm border-r border-slate-200 shadow-sm">
-                {isLoading ? (
-                  <div className="flex flex-col items-center justify-center h-full p-6">
-                    <div className="w-10 h-10 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mb-4"></div>
-                    <p className="text-slate-700 font-medium">Loading emails...</p>
-                    {isGeminiConnected && (
-                      <p className="text-sm text-purple-600 mt-2">✨ Analyzing with Gemini AI</p>
+              {/* Labels Panel */}
+              <EmailLabels
+                labels={labels}
+                onCreateLabel={handleCreateLabel}
+                onDeleteLabel={handleDeleteLabel}
+                onEditLabel={handleEditLabel}
+                onFilterByLabel={setSelectedLabel}
+                selectedLabel={selectedLabel}
+              />
+
+              {/* Email Panel */}
+              <div className="flex-1 flex flex-col">
+                {/* Search */}
+                <EmailSearch
+                  onSearch={handleSearch}
+                  onClear={handleClearSearch}
+                  categories={categories}
+                  labels={labels.map(l => l.name)}
+                />
+
+                {/* Bulk Actions */}
+                <EmailBulkActions
+                  selectedCount={selectedEmails.size}
+                  totalCount={displayEmails.length}
+                  onSelectAll={handleSelectAll}
+                  onDeselectAll={handleDeselectAll}
+                  onMarkAsRead={handleBulkMarkAsRead}
+                  onMarkAsUnread={handleBulkMarkAsUnread}
+                  onArchive={handleBulkArchive}
+                  onDelete={handleBulkDelete}
+                  onAddLabel={handleAddLabel}
+                  onStar={() => {}}
+                  availableLabels={labels.map(l => l.name)}
+                  isAllSelected={selectedEmails.size === displayEmails.length && displayEmails.length > 0}
+                />
+
+                <div className="flex flex-1">
+                  {/* Email List */}
+                  <div className="w-80 bg-white/70 backdrop-blur-sm border-r border-slate-200 shadow-sm">
+                    {isLoading ? (
+                      <div className="flex flex-col items-center justify-center h-full p-6">
+                        <div className="w-10 h-10 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mb-4"></div>
+                        <p className="text-slate-700 font-medium">Loading emails...</p>
+                        {isGeminiConnected && (
+                          <p className="text-sm text-purple-600 mt-2">✨ Analyzing with Gemini AI</p>
+                        )}
+                      </div>
+                    ) : error ? (
+                      <div className="flex flex-col items-center justify-center h-full p-6">
+                        <AlertCircle className="w-12 h-12 text-red-500 mb-4" />
+                        <p className="text-slate-800 font-medium mb-2">Error loading emails</p>
+                        <p className="text-slate-600 mb-4 text-center text-sm">{error}</p>
+                        <button 
+                          onClick={() => refetch()} 
+                          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-md"
+                        >
+                          Try Again
+                        </button>
+                      </div>
+                    ) : (
+                      <EmailList 
+                        emails={displayEmails} 
+                        onEmailSelect={handleEmailSelect}
+                        selectedEmail={selectedEmail}
+                        selectedEmails={selectedEmails}
+                        onSelectEmail={handleSelectEmail}
+                      />
                     )}
                   </div>
-                ) : error ? (
-                  <div className="flex flex-col items-center justify-center h-full p-6">
-                    <AlertCircle className="w-12 h-12 text-red-500 mb-4" />
-                    <p className="text-slate-800 font-medium mb-2">Error loading emails</p>
-                    <p className="text-slate-600 mb-4 text-center text-sm">{error}</p>
-                    <button 
-                      onClick={() => refetch()} 
-                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-md"
-                    >
-                      Try Again
-                    </button>
-                  </div>
-                ) : (
-                  <EmailList 
-                    emails={emails} 
-                    onEmailSelect={handleEmailSelect}
-                    selectedEmail={selectedEmail}
-                  />
-                )}
-              </div>
 
-              {/* Email Detail Panel - Flexible width with max constraint */}
-              <div className="flex-1 bg-white/50 backdrop-blur-sm max-w-3xl">
-                {selectedEmail ? (
-                  <EmailDetail 
-                    email={selectedEmail} 
-                    onReply={() => handleReplyClick(selectedEmail)}
-                  />
-                ) : (
-                  <div className="h-full flex items-center justify-center">
-                    <div className="text-center text-slate-500">
-                      <div className="w-16 h-16 bg-gradient-to-r from-blue-100 to-purple-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                        <Mail className="w-8 h-8 text-blue-600" />
+                  {/* Email Detail */}
+                  <div className="flex-1 bg-white/50 backdrop-blur-sm max-w-3xl">
+                    {selectedEmail ? (
+                      <EmailDetail 
+                        email={selectedEmail} 
+                        onReply={() => handleReplyClick(selectedEmail)}
+                      />
+                    ) : (
+                      <div className="h-full flex items-center justify-center">
+                        <div className="text-center text-slate-500">
+                          <div className="w-16 h-16 bg-gradient-to-r from-blue-100 to-purple-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                            <Mail className="w-8 h-8 text-blue-600" />
+                          </div>
+                          <h3 className="text-xl font-semibold mb-3 text-slate-800">Select an email</h3>
+                          <p className="text-sm text-slate-600">Choose an email from the list to view details and AI insights</p>
+                        </div>
                       </div>
-                      <h3 className="text-xl font-semibold mb-3 text-slate-800">Select an email</h3>
-                      <p className="text-sm text-slate-600">Choose an email from the list to view details and AI insights</p>
-                    </div>
+                    )}
                   </div>
-                )}
+                </div>
               </div>
 
-              {/* Task Panel - Fixed width */}
+              {/* Task Panel */}
               <div className="w-80 bg-white/70 backdrop-blur-sm border-l border-slate-200 shadow-sm">
                 <TaskPanel 
                   tasks={tasks}
@@ -323,11 +532,18 @@ const Index = () => {
               </div>
             </div>
           ) : (
-            /* Calendar Layout */
             <div className="h-[calc(100vh-144px)]">
               <CalendarView tasks={tasks} />
             </div>
           )}
+
+          {/* Email Composer */}
+          <EmailComposer
+            isOpen={isComposerOpen}
+            onClose={() => setIsComposerOpen(false)}
+            onSend={handleSendEmail}
+            replyTo={replyTo ? { to: replyTo.sender, subject: replyTo.subject } : undefined}
+          />
 
           {/* Reply Interface */}
           {replyTo && (
