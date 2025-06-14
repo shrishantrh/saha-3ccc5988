@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Mail, Circle, AlertCircle, Clock, CheckSquare, Calendar, Zap, Frown, Meh, Smile, Tag } from 'lucide-react';
 import { Email } from '../types';
@@ -59,7 +58,7 @@ const EmailList: React.FC<EmailListProps> = ({
   const handleEmailClick = (email: Email, e: React.MouseEvent) => {
     // Don't select email if clicking on checkbox
     const target = e.target as HTMLElement;
-    if (target.type === 'checkbox' || target.closest('input[type="checkbox"]')) {
+    if ((target as HTMLInputElement).type === 'checkbox' || target.closest('input[type="checkbox"]')) {
       e.stopPropagation();
       return;
     }
