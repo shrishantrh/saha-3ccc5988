@@ -1,7 +1,8 @@
 
 import React, { useState } from 'react';
-import { Mail, Reply, Archive, Trash2, Star, MoreHorizontal, Zap, Clock, CheckCircle, AlertTriangle } from 'lucide-react';
+import { Mail, Reply, Archive, Trash2, Star, MoreHorizontal, Zap, Clock, CheckCircle, AlertTriangle, Calendar } from 'lucide-react';
 import { Email } from '../types';
+import MeetingSchedulerComponent from './MeetingScheduler';
 
 interface EmailDetailProps {
   email: Email;
@@ -10,6 +11,7 @@ interface EmailDetailProps {
 
 const EmailDetail: React.FC<EmailDetailProps> = ({ email, onReply }) => {
   const [isExpanded, setIsExpanded] = useState(true);
+  const [showMeetingScheduler, setShowMeetingScheduler] = useState(false);
   
   const aiAnalysis = email.aiAnalysis as any;
   const urgency = aiAnalysis?.urgency;
@@ -31,6 +33,14 @@ const EmailDetail: React.FC<EmailDetailProps> = ({ email, onReply }) => {
       default: return 'text-gray-600 bg-gray-50 border-gray-200';
     }
   };
+
+  // Check if email might contain meeting request
+  const containsMeetingKeywords = (text: string) => {
+    const keywords = ['meeting', 'schedule', 'appointment', 'call', 'conference', 'discuss', 'availability', 'time to meet'];
+    return keywords.some(keyword => text.toLowerCase().includes(keyword));
+  };
+
+  const showScheduleButton = containsMeetingKeywords(email.subject + ' ' + email.body);
 
   return (
     <div className="h-full flex flex-col">
@@ -120,6 +130,17 @@ const EmailDetail: React.FC<EmailDetailProps> = ({ email, onReply }) => {
             <Reply className="w-4 h-4" />
             <span className="font-medium">Reply</span>
           </button>
+          
+          {showScheduleButton && (
+            <button 
+              onClick={() => setShowMeetingScheduler(true)}
+              className="flex items-center space-x-2 px-4 py-3 bg-gradient-to-r from-green-600 to-blue-600 text-white rounded-lg hover:from-green-700 hover:to-blue-700 transition-all duration-200 shadow-md hover:shadow-lg"
+            >
+              <Calendar className="w-4 h-4" />
+              <span>Schedule Meeting</span>
+            </button>
+          )}
+          
           <button className="flex items-center space-x-2 px-4 py-3 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors">
             <span>Forward</span>
           </button>
@@ -162,6 +183,17 @@ const EmailDetail: React.FC<EmailDetailProps> = ({ email, onReply }) => {
           )}
         </div>
       </div>
+
+      {/* Meeting Scheduler Modal */}
+      <MeetingSchedulerComponent
+        isOpen={showMeetingScheduler}
+        onClose={() => setShowMeetingScheduler(false)}
+        emailContext={{
+          subject: email.subject,
+          body: email.body,
+          sender: email.sender
+        }}
+      />
     </div>
   );
 };
