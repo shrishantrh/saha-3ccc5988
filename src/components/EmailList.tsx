@@ -57,7 +57,10 @@ const EmailList: React.FC<EmailListProps> = ({
   };
 
   const handleEmailClick = (email: Email, e: React.MouseEvent) => {
-    if (e.target instanceof HTMLInputElement) {
+    // Stop propagation only for interactive elements
+    const target = e.target as HTMLElement;
+    if (target.tagName === 'INPUT' || target.type === 'checkbox') {
+      e.stopPropagation();
       return;
     }
     onEmailSelect(email);
@@ -65,6 +68,8 @@ const EmailList: React.FC<EmailListProps> = ({
 
   const handleCheckboxChange = (emailId: string, e: React.ChangeEvent<HTMLInputElement>) => {
     e.stopPropagation();
+    e.preventDefault();
+    console.log('Checkbox clicked for email:', emailId);
     if (onSelectEmail) {
       try {
         onSelectEmail(emailId);
@@ -104,7 +109,7 @@ const EmailList: React.FC<EmailListProps> = ({
             <div
               key={email.id}
               onClick={(e) => handleEmailClick(email, e)}
-              className={`p-4 border-b border-gray-100 cursor-pointer transition-all duration-200 hover:bg-blue-50 ${
+              className={`p-4 border-b border-gray-100 cursor-pointer transition-all duration-200 hover:bg-blue-50 group ${
                 selectedEmail?.id === email.id ? 'bg-blue-50 border-l-4 border-l-blue-500 shadow-sm' : ''
               } ${isSelected ? 'bg-blue-25' : ''} ${!email.read ? 'bg-white' : 'bg-gray-25'}`}
             >
@@ -112,30 +117,41 @@ const EmailList: React.FC<EmailListProps> = ({
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center space-x-3 flex-1 min-w-0">
                   {onSelectEmail && (
-                    <input
-                      type="checkbox"
-                      checked={isSelected}
-                      onChange={(e) => handleCheckboxChange(email.id, e)}
-                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 focus:ring-2 w-4 h-4"
-                      onClick={(e) => e.stopPropagation()}
-                    />
+                    <div onClick={(e) => e.stopPropagation()}>
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={(e) => handleCheckboxChange(email.id, e)}
+                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 focus:ring-2 w-4 h-4"
+                      />
+                    </div>
                   )}
                   {!email.read && <Circle className="w-2 h-2 text-blue-500 fill-current flex-shrink-0" />}
                   <AlertCircle className={`w-4 h-4 flex-shrink-0 ${priorityColors[email.priority]}`} />
-                  {urgency && (
-                    <div className="flex items-center space-x-1 flex-shrink-0">
-                      <Zap className={`w-3 h-3 ${getUrgencyColor(urgency)}`} />
-                      <span className={`text-xs font-medium ${getUrgencyColor(urgency)}`}>
-                        {urgency}
-                      </span>
+                  
+                  {/* AI Insights - Hidden by default, shown on hover */}
+                  <div className="relative group/ai">
+                    <div className="opacity-0 group-hover/ai:opacity-100 transition-opacity duration-200 flex items-center space-x-1">
+                      {urgency && (
+                        <div className="flex items-center space-x-1 flex-shrink-0">
+                          <Zap className={`w-3 h-3 ${getUrgencyColor(urgency)}`} />
+                          <span className={`text-xs font-medium ${getUrgencyColor(urgency)}`}>
+                            {urgency}
+                          </span>
+                        </div>
+                      )}
+                      {SentimentIcon && (
+                        <SentimentIcon className={`w-3 h-3 flex-shrink-0 ${sentimentColor}`} />
+                      )}
                     </div>
-                  )}
+                    {(urgency || SentimentIcon) && (
+                      <div className="w-2 h-2 bg-purple-400 rounded-full group-hover/ai:hidden" />
+                    )}
+                  </div>
+                  
                   <span className={`font-medium text-gray-900 truncate text-sm ${!email.read ? 'font-semibold' : ''}`}>
                     {email.sender}
                   </span>
-                  {SentimentIcon && (
-                    <SentimentIcon className={`w-3 h-3 flex-shrink-0 ${sentimentColor}`} />
-                  )}
                 </div>
                 <div className="flex items-center space-x-2 flex-shrink-0">
                   {taskCount > 0 && (
@@ -160,7 +176,7 @@ const EmailList: React.FC<EmailListProps> = ({
                 </p>
               </div>
 
-              {/* AI-Generated Labels and Category */}
+              {/* AI-Generated Category and Labels */}
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center space-x-2 flex-wrap gap-1">
                   <span className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-medium border ${
@@ -169,13 +185,6 @@ const EmailList: React.FC<EmailListProps> = ({
                     <Tag className="w-3 h-3 mr-1" />
                     {email.category}
                   </span>
-                  
-                  {/* AI-Generated Labels from email analysis */}
-                  {(email as any).labels?.slice(0, 2).map((label: string) => (
-                    <span key={label} className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-purple-50 text-purple-700 border border-purple-200">
-                      ✨ {label}
-                    </span>
-                  ))}
                   
                   {(email.aiAnalysis as any)?.actionRequired && (
                     <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200">

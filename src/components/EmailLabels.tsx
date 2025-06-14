@@ -18,6 +18,7 @@ interface EmailLabelsProps {
   onEditLabel: (labelId: string, name: string, color: string) => void;
   onFilterByLabel: (labelName: string) => void;
   selectedLabel?: string;
+  aiCategories?: Array<{ name: string; count: number; color: string }>;
 }
 
 const LABEL_COLORS = [
@@ -31,7 +32,8 @@ const EmailLabels: React.FC<EmailLabelsProps> = ({
   onDeleteLabel,
   onEditLabel,
   onFilterByLabel,
-  selectedLabel
+  selectedLabel,
+  aiCategories = []
 }) => {
   const [isCreating, setIsCreating] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -109,97 +111,129 @@ const EmailLabels: React.FC<EmailLabelsProps> = ({
             <span className="font-medium">All Emails</span>
           </div>
           <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
-            {labels.reduce((sum, label) => sum + label.count, 0)}
+            {aiCategories.reduce((sum, cat) => sum + cat.count, 0)}
           </span>
         </button>
 
-        {/* AI-Generated Labels Section */}
+        {/* AI-Generated Categories Section */}
         <div className="pt-2">
           <div className="flex items-center space-x-2 mb-2 px-2">
-            <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">AI Generated</span>
+            <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">AI Categories</span>
             <div className="h-px bg-gray-200 flex-1"></div>
           </div>
           
-          {/* Custom Labels */}
-          {labels.map((label) => (
-            <div key={label.id} className="group">
-              {editingId === label.id ? (
-                <div className="p-3 space-y-3 border border-gray-300 rounded-lg bg-gray-50">
-                  <Input
-                    value={newLabelName}
-                    onChange={(e) => setNewLabelName(e.target.value)}
-                    placeholder="Label name"
-                    className="h-8 text-sm"
-                    autoFocus
-                  />
-                  <div className="flex items-center space-x-2">
-                    <Palette className="w-3 h-3 text-gray-500" />
-                    <div className="flex space-x-1">
-                      {LABEL_COLORS.map((color) => (
-                        <button
-                          key={color}
-                          onClick={() => setNewLabelColor(color)}
-                          className={`w-4 h-4 rounded-full border-2 transition-all ${
-                            newLabelColor === color ? 'border-gray-400 scale-110' : 'border-transparent'
-                          }`}
-                          style={{ backgroundColor: color }}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                  <div className="flex space-x-2">
-                    <Button size="sm" onClick={handleSaveEdit} className="h-7 text-xs">
-                      Save
-                    </Button>
-                    <Button variant="ghost" size="sm" onClick={handleCancelEdit} className="h-7 text-xs">
-                      Cancel
-                    </Button>
-                  </div>
+          {/* AI Categories */}
+          {aiCategories.map((category) => (
+            <button
+              key={category.name}
+              onClick={() => onFilterByLabel(category.name)}
+              className={`w-full flex items-center justify-between p-3 rounded-lg text-left hover:bg-gray-100 transition-all duration-200 group text-sm ${
+                selectedLabel === category.name ? 'bg-blue-100 text-blue-700 border border-blue-200' : 'bg-white border border-gray-200'
+              }`}
+            >
+              <div className="flex items-center space-x-3 flex-1 min-w-0">
+                <div
+                  className="w-3 h-3 rounded-full"
+                  style={{ backgroundColor: category.color }}
+                />
+                <span className="truncate font-medium">{category.name}</span>
+                <div className="text-xs text-purple-600 bg-purple-50 px-1 py-0.5 rounded">
+                  ✨
                 </div>
-              ) : (
-                <button
-                  onClick={() => onFilterByLabel(label.name)}
-                  className={`w-full flex items-center justify-between p-3 rounded-lg text-left hover:bg-gray-100 transition-all duration-200 group text-sm ${
-                    selectedLabel === label.name ? 'bg-blue-100 text-blue-700 border border-blue-200' : 'bg-white border border-gray-200'
-                  }`}
-                >
-                  <div className="flex items-center space-x-3 flex-1 min-w-0">
-                    <div
-                      className="w-3 h-3 rounded-full"
-                      style={{ backgroundColor: label.color }}
-                    />
-                    <span className="truncate font-medium">{label.name}</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">{label.count}</span>
-                    <div className="opacity-0 group-hover:opacity-100 flex space-x-1 transition-opacity">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleEditLabel(label);
-                        }}
-                        className="p-1 hover:bg-blue-100 hover:text-blue-600 rounded"
-                        title="Edit label"
-                      >
-                        <Edit2 className="w-3 h-3" />
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onDeleteLabel(label.id);
-                        }}
-                        className="p-1 hover:bg-red-100 hover:text-red-600 rounded"
-                        title="Delete label"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                    </div>
-                  </div>
-                </button>
-              )}
-            </div>
+              </div>
+              <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">{category.count}</span>
+            </button>
           ))}
         </div>
+
+        {/* Custom Labels Section */}
+        {labels.length > 0 && (
+          <div className="pt-4">
+            <div className="flex items-center space-x-2 mb-2 px-2">
+              <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Custom Labels</span>
+              <div className="h-px bg-gray-200 flex-1"></div>
+            </div>
+            
+            {labels.map((label) => (
+              <div key={label.id} className="group">
+                {editingId === label.id ? (
+                  <div className="p-3 space-y-3 border border-gray-300 rounded-lg bg-gray-50">
+                    <Input
+                      value={newLabelName}
+                      onChange={(e) => setNewLabelName(e.target.value)}
+                      placeholder="Label name"
+                      className="h-8 text-sm"
+                      autoFocus
+                    />
+                    <div className="flex items-center space-x-2">
+                      <Palette className="w-3 h-3 text-gray-500" />
+                      <div className="flex space-x-1">
+                        {LABEL_COLORS.map((color) => (
+                          <button
+                            key={color}
+                            onClick={() => setNewLabelColor(color)}
+                            className={`w-4 h-4 rounded-full border-2 transition-all ${
+                              newLabelColor === color ? 'border-gray-400 scale-110' : 'border-transparent'
+                            }`}
+                            style={{ backgroundColor: color }}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                    <div className="flex space-x-2">
+                      <Button size="sm" onClick={handleSaveEdit} className="h-7 text-xs">
+                        Save
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={handleCancelEdit} className="h-7 text-xs">
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => onFilterByLabel(label.name)}
+                    className={`w-full flex items-center justify-between p-3 rounded-lg text-left hover:bg-gray-100 transition-all duration-200 group text-sm ${
+                      selectedLabel === label.name ? 'bg-blue-100 text-blue-700 border border-blue-200' : 'bg-white border border-gray-200'
+                    }`}
+                  >
+                    <div className="flex items-center space-x-3 flex-1 min-w-0">
+                      <div
+                        className="w-3 h-3 rounded-full"
+                        style={{ backgroundColor: label.color }}
+                      />
+                      <span className="truncate font-medium">{label.name}</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">{label.count}</span>
+                      <div className="opacity-0 group-hover:opacity-100 flex space-x-1 transition-opacity">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEditLabel(label);
+                          }}
+                          className="p-1 hover:bg-blue-100 hover:text-blue-600 rounded"
+                          title="Edit label"
+                        >
+                          <Edit2 className="w-3 h-3" />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onDeleteLabel(label.id);
+                          }}
+                          className="p-1 hover:bg-red-100 hover:text-red-600 rounded"
+                          title="Delete label"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    </div>
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* Create New Label */}
         {isCreating && (

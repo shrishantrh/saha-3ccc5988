@@ -120,6 +120,37 @@ const Index = () => {
   const [isLabelsVisible, setIsLabelsVisible] = useState(false);
   const [showSearchBar, setShowSearchBar] = useState(false);
 
+  // Generate AI categories from emails
+  const aiCategories = React.useMemo(() => {
+    const categoryCount: { [key: string]: number } = {};
+    emails.forEach(email => {
+      if (email.category) {
+        categoryCount[email.category] = (categoryCount[email.category] || 0) + 1;
+      }
+    });
+
+    const categoryColors: { [key: string]: string } = {
+      'Academic': '#3b82f6',
+      'Admissions': '#8b5cf6',
+      'Events': '#22c55e',
+      'Personal': '#f97316',
+      'Work': '#ef4444',
+      'Finance': '#10b981',
+      'Travel': '#06b6d4',
+      'Shopping': '#ec4899',
+      'Social': '#8b5cf6',
+      'Health': '#f43f5e',
+      'Legal': '#6b7280',
+      'Technology': '#6366f1'
+    };
+
+    return Object.entries(categoryCount).map(([name, count]) => ({
+      name,
+      count,
+      color: categoryColors[name] || '#6b7280'
+    }));
+  }, [emails]);
+
   // Update emails and tasks when Gmail emails change OR when Gemini connection changes
   useEffect(() => {
     console.log('Index useEffect triggered - authenticated:', isAuthenticated, 'gmailEmails:', gmailEmails.length, 'geminiConnected:', isGeminiConnected);
@@ -176,9 +207,13 @@ const Index = () => {
     let filtered = emails;
     
     if (selectedLabel) {
-      filtered = emails.filter(email => 
-        (email as any).labels?.includes(selectedLabel)
-      );
+      // Filter by AI category or custom label
+      filtered = emails.filter(email => {
+        // Check AI category
+        if (email.category === selectedLabel) return true;
+        // Check custom labels
+        return (email as any).labels?.includes(selectedLabel);
+      });
     }
     
     setFilteredEmails(filtered);
@@ -250,13 +285,17 @@ const Index = () => {
 
   // Bulk Actions
   const handleSelectEmail = (emailId: string) => {
-    const newSelected = new Set(selectedEmails);
-    if (newSelected.has(emailId)) {
-      newSelected.delete(emailId);
-    } else {
-      newSelected.add(emailId);
-    }
-    setSelectedEmails(newSelected);
+    console.log('handleSelectEmail called with:', emailId);
+    setSelectedEmails(prev => {
+      const newSelected = new Set(prev);
+      if (newSelected.has(emailId)) {
+        newSelected.delete(emailId);
+      } else {
+        newSelected.add(emailId);
+      }
+      console.log('New selected emails:', newSelected);
+      return newSelected;
+    });
   };
 
   const handleSelectAll = () => {
@@ -361,6 +400,7 @@ const Index = () => {
   };
 
   const handleFilterByLabel = (labelName: string) => {
+    console.log('Filtering by label:', labelName);
     setSelectedLabel(labelName);
   };
 
@@ -556,6 +596,7 @@ const Index = () => {
                     onEditLabel={handleEditLabel}
                     onFilterByLabel={handleFilterByLabel}
                     selectedLabel={selectedLabel}
+                    aiCategories={aiCategories}
                   />
                 </div>
               )}
