@@ -1,18 +1,7 @@
-
 import React, { useState, useEffect } from 'react';
-import { Mail, Clock, AlertCircle, CheckCircle, X, MoreHorizontal, Settings as SettingsIcon, MessageCircle, Calendar, Edit, Plus, Filter, Search, Tag } from 'lucide-react';
-import { Link } from 'react-router-dom';
-import EmailList from '../components/EmailList';
-import EmailDetail from '../components/EmailDetail';
-import TaskPanel from '../components/TaskPanel';
-import CalendarPanel from '../components/CalendarPanel';
-import CalendarView from '../components/CalendarView';
-import ReplyInterface from '../components/ReplyInterface';
-import EmailChat from '../components/EmailChat';
-import EmailComposer from '../components/EmailComposer';
-import EmailSearch from '../components/EmailSearch';
-import EmailBulkActions from '../components/EmailBulkActions';
-import EmailLabels from '../components/EmailLabels';
+import EmailViewHeader from '../components/EmailViewHeader';
+import EmailInboxView from '../components/EmailInboxView';
+import WelcomeScreen from '../components/WelcomeScreen';
 import { Email, Task } from '../types';
 import { useGmailAuth } from '../hooks/useGmailAuth';
 import { useGmailEmails } from '../hooks/useGmailEmails';
@@ -446,304 +435,70 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Modern Header */}
-      <header className="bg-white border-b border-gray-200 px-6 py-4 shadow-sm">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
-              <Mail className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                Saha
-              </h1>
-              <span className="text-sm text-gray-500 font-medium">
-                AI-Powered Email Intelligence
-              </span>
-            </div>
-
-            {/* View Toggle - Moved here */}
-            {isAuthenticated && (
-              <div className="flex items-center space-x-1 bg-gray-100 rounded-lg p-1 ml-8">
-                <button
-                  onClick={() => setCurrentView('email')}
-                  className={`flex items-center space-x-2 px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
-                    currentView === 'email'
-                      ? 'bg-white text-blue-600 shadow-sm'
-                      : 'text-gray-600 hover:text-gray-800'
-                  }`}
-                >
-                  <Mail className="w-4 h-4" />
-                  <span>Inbox</span>
-                </button>
-                <button
-                  onClick={() => setCurrentView('calendar')}
-                  className={`flex items-center space-x-2 px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
-                    currentView === 'calendar'
-                      ? 'bg-white text-purple-600 shadow-sm'
-                      : 'text-gray-600 hover:text-gray-800'
-                  }`}
-                >
-                  <Calendar className="w-4 h-4" />
-                  <span>Calendar</span>
-                </button>
-              </div>
-            )}
-          </div>
-
-          <div className="flex items-center space-x-3">
-            {/* Search and Labels Controls - Moved here */}
-            {isAuthenticated && (
-              <>
-                <button
-                  onClick={() => setShowSearchBar(!showSearchBar)}
-                  className={`p-2 rounded-lg transition-colors ${
-                    showSearchBar 
-                      ? 'bg-blue-100 text-blue-600' 
-                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
-                  }`}
-                  title="Search"
-                >
-                  <Search className="w-5 h-5" />
-                </button>
-                
-                <button
-                  onClick={() => setIsLabelsVisible(!isLabelsVisible)}
-                  className={`flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    isLabelsVisible 
-                      ? 'bg-blue-100 text-blue-600' 
-                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
-                  }`}
-                  title="Toggle Labels"
-                >
-                  <Tag className="w-4 h-4" />
-                  <span>Labels</span>
-                </button>
-              </>
-            )}
-
-            {/* Status Indicator */}
-            {isAuthenticated && (
-              <div className="flex items-center space-x-2 px-3 py-2 bg-green-50 text-green-700 rounded-lg border border-green-200">
-                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                <span className="font-medium text-sm">Gmail Connected</span>
-              </div>
-            )}
-
-            {/* Action Buttons */}
-            <button
-              onClick={handleCompose}
-              className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200 shadow-md hover:shadow-lg"
-            >
-              <Edit className="w-4 h-4" />
-              <span className="font-medium">Compose</span>
-            </button>
-
-            {isGeminiConnected && (
-              <button
-                onClick={() => setIsChatOpen(true)}
-                className="p-2 text-gray-500 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-all duration-200"
-                title="AI Assistant"
-              >
-                <MessageCircle className="w-5 h-5" />
-              </button>
-            )}
-
-            <Link 
-              to="/settings" 
-              className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-all duration-200"
-              title="Settings"
-            >
-              <SettingsIcon className="w-5 h-5" />
-            </Link>
-          </div>
-        </div>
-
-        {/* Expandable Search Bar */}
-        {showSearchBar && isAuthenticated && (
-          <div className="mt-3 animate-fade-in">
-            <EmailSearch
-              onSearch={handleSearch}
-              onClear={() => {
-                handleClearSearch();
-                setShowSearchBar(false);
-              }}
-              categories={categories}
-              labels={labels.map(l => l.name)}
-            />
-          </div>
-        )}
-      </header>
+      <EmailViewHeader
+        isAuthenticated={isAuthenticated}
+        isGeminiConnected={isGeminiConnected}
+        currentView={currentView}
+        setCurrentView={setCurrentView}
+        showSearchBar={showSearchBar}
+        setShowSearchBar={setShowSearchBar}
+        isLabelsVisible={isLabelsVisible}
+        setIsLabelsVisible={setIsLabelsVisible}
+        handleCompose={handleCompose}
+        setIsChatOpen={setIsChatOpen}
+        handleSearch={handleSearch}
+        handleClearSearch={handleClearSearch}
+        categories={categories}
+        labels={labels}
+      />
 
       {isAuthenticated ? (
-        <>
-          {currentView === 'email' ? (
-            <div className="flex h-[calc(100vh-120px)]">
-              {/* Collapsible Labels Panel */}
-              {isLabelsVisible && (
-                <div className="w-64 bg-white border-r border-gray-200 animate-slide-in-right">
-                  <EmailLabels
-                    labels={labels}
-                    onCreateLabel={handleCreateLabel}
-                    onDeleteLabel={handleDeleteLabel}
-                    onEditLabel={handleEditLabel}
-                    onFilterByLabel={handleFilterByLabel}
-                    selectedLabel={selectedLabel}
-                    aiCategories={aiCategories}
-                  />
-                </div>
-              )}
-
-              {/* Main Content Area */}
-              <div className="flex-1 flex">
-                {/* Email List */}
-                <div className="w-96 bg-white border-r border-gray-200 flex flex-col">
-                  {/* Bulk Actions */}
-                  <EmailBulkActions
-                    selectedCount={selectedEmails.size}
-                    totalCount={displayEmails.length}
-                    onSelectAll={handleSelectAll}
-                    onDeselectAll={handleDeselectAll}
-                    onMarkAsRead={handleBulkMarkAsRead}
-                    onMarkAsUnread={handleBulkMarkAsUnread}
-                    onArchive={handleBulkArchive}
-                    onDelete={handleBulkDelete}
-                    onAddLabel={handleAddLabel}
-                    onStar={() => {}}
-                    availableLabels={[...labels.map(l => l.name), ...aiCategories.map(c => c.name)]}
-                    isAllSelected={selectedEmails.size === displayEmails.length && displayEmails.length > 0}
-                  />
-
-                  {/* Email List Content */}
-                  {isLoading ? (
-                    <div className="flex flex-col items-center justify-center h-full p-8">
-                      <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-6"></div>
-                      <h3 className="text-lg font-medium text-gray-900 mb-2">Loading your emails</h3>
-                      {isGeminiConnected && (
-                        <p className="text-sm text-blue-600 flex items-center space-x-2">
-                          <span>✨</span>
-                          <span>Analyzing with Gemini AI</span>
-                        </p>
-                      )}
-                    </div>
-                  ) : error ? (
-                    <div className="flex flex-col items-center justify-center h-full p-8">
-                      <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-6">
-                        <AlertCircle className="w-8 h-8 text-red-500" />
-                      </div>
-                      <h3 className="text-lg font-medium text-gray-900 mb-2">Error loading emails</h3>
-                      <p className="text-gray-600 mb-6 text-center text-sm">{error}</p>
-                      <button 
-                        onClick={() => refetch()} 
-                        className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-md font-medium"
-                      >
-                        Try Again
-                      </button>
-                    </div>
-                  ) : (
-                    <EmailList 
-                      emails={displayEmails} 
-                      onEmailSelect={handleEmailSelect}
-                      selectedEmail={selectedEmail}
-                      selectedEmails={selectedEmails}
-                      onSelectEmail={handleSelectEmail}
-                    />
-                  )}
-                </div>
-
-                {/* Email Detail */}
-                <div className="flex-1 bg-white">
-                  {selectedEmail ? (
-                    <EmailDetail 
-                      email={selectedEmail} 
-                      onReply={() => handleReplyClick(selectedEmail)}
-                    />
-                  ) : (
-                    <div className="h-full flex items-center justify-center">
-                      <div className="text-center max-w-md">
-                        <div className="w-20 h-20 bg-gradient-to-r from-blue-100 to-purple-100 rounded-2xl flex items-center justify-center mx-auto mb-8">
-                          <Mail className="w-10 h-10 text-blue-600" />
-                        </div>
-                        <h3 className="text-2xl font-semibold mb-4 text-gray-900">Select an email</h3>
-                        <p className="text-gray-600 leading-relaxed">
-                          Choose an email from your inbox to view AI-powered insights, 
-                          smart replies, and intelligent task extraction.
-                        </p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Task Panel */}
-                <div className="w-80 bg-white border-l border-gray-200">
-                  <TaskPanel 
-                    tasks={tasks}
-                    emails={emails}
-                    onTaskComplete={handleTaskComplete}
-                    onTaskDelete={handleTaskDelete}
-                    onTaskPriorityChange={handleTaskPriorityChange}
-                    onEmailSelect={handleEmailSelect}
-                    onTaskDateChange={handleTaskDateChange}
-                  />
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="h-[calc(100vh-120px)]">
-              <CalendarView tasks={tasks} />
-            </div>
-          )}
-
-          {/* Email Composer */}
-          <EmailComposer
-            isOpen={isComposerOpen}
-            onClose={() => setIsComposerOpen(false)}
-            onSend={handleSendEmail}
-            replyTo={replyTo ? { to: replyTo.sender, subject: replyTo.subject } : undefined}
-          />
-
-          {/* Reply Interface */}
-          {replyTo && (
-            <ReplyInterface 
-              email={replyTo}
-              onSend={handleSendReply}
-              onCancel={() => setReplyTo(null)}
-            />
-          )}
-
-          {/* AI Chat Interface */}
-          <EmailChat
-            geminiService={geminiService}
-            emails={emails}
-            tasks={tasks}
-            isOpen={isChatOpen}
-            onClose={() => setIsChatOpen(false)}
-          />
-        </>
+        <EmailInboxView
+          currentView={currentView}
+          isGeminiConnected={isGeminiConnected}
+          isLabelsVisible={isLabelsVisible}
+          labels={labels}
+          aiCategories={aiCategories}
+          onCreateLabel={handleCreateLabel}
+          onDeleteLabel={handleDeleteLabel}
+          onEditLabel={handleEditLabel}
+          onFilterByLabel={handleFilterByLabel}
+          selectedLabel={selectedLabel}
+          displayEmails={displayEmails}
+          selectedEmails={selectedEmails}
+          handleSelectAll={handleSelectAll}
+          handleDeselectAll={handleDeselectAll}
+          handleBulkMarkAsRead={handleBulkMarkAsRead}
+          handleBulkMarkAsUnread={handleBulkMarkAsUnread}
+          handleBulkArchive={handleBulkArchive}
+          handleBulkDelete={handleBulkDelete}
+          handleAddLabel={handleAddLabel}
+          isAllSelected={selectedEmails.size === displayEmails.length && displayEmails.length > 0}
+          isLoading={isLoading}
+          error={error}
+          refetch={refetch}
+          handleEmailSelect={handleEmailSelect}
+          selectedEmail={selectedEmail}
+          handleSelectEmail={handleSelectEmail}
+          handleReplyClick={handleReplyClick}
+          tasks={tasks}
+          emails={emails}
+          handleTaskComplete={handleTaskComplete}
+          handleTaskDelete={handleTaskDelete}
+          handleTaskPriorityChange={handleTaskPriorityChange}
+          handleTaskDateChange={handleTaskDateChange}
+          isComposerOpen={isComposerOpen}
+          setIsComposerOpen={setIsComposerOpen}
+          handleSendEmail={handleSendEmail}
+          replyTo={replyTo}
+          setReplyTo={setReplyTo}
+          handleSendReply={handleSendReply}
+          isChatOpen={isChatOpen}
+          setIsChatOpen={setIsChatOpen}
+          geminiService={geminiService}
+        />
       ) : (
-        <div className="h-[calc(100vh-120px)] flex flex-col items-center justify-center p-8">
-          <div className="w-32 h-32 bg-gradient-to-r from-blue-600 to-purple-600 rounded-3xl flex items-center justify-center mb-12 shadow-2xl">
-            <Mail className="w-16 h-16 text-white" />
-          </div>
-          
-          <h2 className="text-4xl font-bold text-gray-900 mb-6 text-center">
-            The Future of Email
-          </h2>
-          
-          <p className="text-gray-600 max-w-2xl text-center mb-12 text-lg leading-relaxed">
-            Experience AI-powered email intelligence that automatically categorizes, 
-            extracts tasks, schedules meetings, and provides smart insights. 
-            Connect your Gmail to get started.
-          </p>
-          
-          <Link
-            to="/settings"
-            className="flex items-center space-x-3 px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl text-lg font-medium"
-          >
-            <Mail className="w-6 h-6" />
-            <span>Connect Gmail Account</span>
-          </Link>
-        </div>
+        <WelcomeScreen />
       )}
     </div>
   );
