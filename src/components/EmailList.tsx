@@ -59,7 +59,7 @@ const EmailList: React.FC<EmailListProps> = ({
   const handleEmailClick = (email: Email, e: React.MouseEvent) => {
     // Stop propagation only for interactive elements
     const target = e.target as HTMLElement;
-    if (target.tagName === 'INPUT' || target.type === 'checkbox') {
+    if (target.tagName === 'INPUT' || (target as HTMLInputElement).type === 'checkbox') {
       e.stopPropagation();
       return;
     }

@@ -127,4 +127,4 @@ const EmailBulkActions: React.FC<EmailBulkActionsProps> = ({
   );
 };
 
-export default EmailLabels;
+export default EmailBulkActions;
