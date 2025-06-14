@@ -468,10 +468,11 @@ const Index = () => {
 
       {isAuthenticated ? (
         <>
-          {/* View Toggle */}
-          <div className="bg-white/70 backdrop-blur-sm border-b border-slate-200 px-6 py-2">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-1 bg-slate-100 rounded-lg p-1 w-fit">
+          {/* Combined Control Bar */}
+          <div className="bg-white/70 backdrop-blur-sm border-b border-slate-200 px-6 py-3">
+            <div className="flex items-center justify-between gap-4">
+              {/* Left: View Toggle */}
+              <div className="flex items-center space-x-1 bg-slate-100 rounded-lg p-1">
                 <button
                   onClick={() => setCurrentView('email')}
                   className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200 ${
@@ -495,18 +496,33 @@ const Index = () => {
                   Calendar View
                 </button>
               </div>
+
+              {/* Center: Search Bar (only in email view) */}
+              {currentView === 'email' && (
+                <div className="flex-1 max-w-2xl">
+                  <EmailSearch
+                    onSearch={handleSearch}
+                    onClear={handleClearSearch}
+                    categories={categories}
+                    labels={labels.map(l => l.name)}
+                  />
+                </div>
+              )}
               
-              <button
-                onClick={() => setIsLabelsVisible(!isLabelsVisible)}
-                className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 rounded-lg text-sm font-medium text-slate-600 transition-colors"
-              >
-                {isLabelsVisible ? 'Hide Labels' : 'Show Labels'}
-              </button>
+              {/* Right: Labels Toggle */}
+              {currentView === 'email' && (
+                <button
+                  onClick={() => setIsLabelsVisible(!isLabelsVisible)}
+                  className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 rounded-lg text-sm font-medium text-slate-600 transition-colors"
+                >
+                  {isLabelsVisible ? 'Hide Labels' : 'Show Labels'}
+                </button>
+              )}
             </div>
           </div>
 
           {currentView === 'email' ? (
-            <div className="flex h-[calc(100vh-120px)]">
+            <div className="flex h-[calc(100vh-140px)]">
               {/* Labels Panel - Collapsible */}
               {isLabelsVisible && (
                 <div className="w-56 border-r border-slate-200">
@@ -523,14 +539,6 @@ const Index = () => {
 
               {/* Main Content */}
               <div className="flex-1 flex flex-col min-w-0">
-                {/* Search */}
-                <EmailSearch
-                  onSearch={handleSearch}
-                  onClear={handleClearSearch}
-                  categories={categories}
-                  labels={labels.map(l => l.name)}
-                />
-
                 {/* Bulk Actions */}
                 <EmailBulkActions
                   selectedCount={selectedEmails.size}
@@ -539,17 +547,17 @@ const Index = () => {
                   onDeselectAll={handleDeselectAll}
                   onMarkAsRead={handleBulkMarkAsRead}
                   onMarkAsUnread={handleBulkMarkAsUnread}
-                  onArchive={() => {}} // Disabled
+                  onArchive={() => {}}
                   onDelete={handleBulkDelete}
                   onAddLabel={handleAddLabel}
-                  onStar={() => {}} // Disabled
+                  onStar={() => {}}
                   availableLabels={labels.map(l => l.name)}
                   isAllSelected={selectedEmails.size === displayEmails.length && displayEmails.length > 0}
                 />
 
                 <div className="flex flex-1 min-h-0">
                   {/* Email List - Fixed width */}
-                  <div className="w-96 bg-white/70 backdrop-blur-sm border-r border-slate-200 shadow-sm flex flex-col">
+                  <div className="w-96 bg-white border-r border-slate-200 shadow-sm flex flex-col">
                     {isLoading ? (
                       <div className="flex flex-col items-center justify-center h-full p-6">
                         <div className="w-10 h-10 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mb-4"></div>
@@ -582,7 +590,7 @@ const Index = () => {
                   </div>
 
                   {/* Email Detail - Flexible */}
-                  <div className="flex-1 bg-white/50 backdrop-blur-sm">
+                  <div className="flex-1 bg-white">
                     {selectedEmail ? (
                       <EmailDetail 
                         email={selectedEmail} 
@@ -602,7 +610,7 @@ const Index = () => {
                   </div>
 
                   {/* Task Panel - Fixed width */}
-                  <div className="w-80 bg-white/70 backdrop-blur-sm border-l border-slate-200 shadow-sm">
+                  <div className="w-80 bg-white border-l border-slate-200 shadow-sm">
                     <TaskPanel 
                       tasks={tasks}
                       emails={emails}
@@ -617,7 +625,7 @@ const Index = () => {
               </div>
             </div>
           ) : (
-            <div className="h-[calc(100vh-120px)]">
+            <div className="h-[calc(100vh-140px)]">
               <CalendarView tasks={tasks} />
             </div>
           )}

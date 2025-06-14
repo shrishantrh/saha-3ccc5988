@@ -1,9 +1,8 @@
 
 import React, { useState } from 'react';
-import { Search, Filter, Calendar, User, Tag, X } from 'lucide-react';
+import { Search, Filter, X } from 'lucide-react';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
-import { Label } from './ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 
 interface SearchFilters {
@@ -66,8 +65,8 @@ const EmailSearch: React.FC<EmailSearchProps> = ({ onSearch, onClear, categories
   });
 
   return (
-    <div className="bg-white border-b border-slate-200 p-4 space-y-4">
-      {/* Main Search Bar */}
+    <div className="w-full">
+      {/* Compact Search Bar */}
       <div className="flex items-center space-x-2">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
@@ -75,143 +74,93 @@ const EmailSearch: React.FC<EmailSearchProps> = ({ onSearch, onClear, categories
             value={filters.query}
             onChange={(e) => updateFilter('query', e.target.value)}
             placeholder="Search emails..."
-            className="pl-10"
+            className="pl-10 h-9"
           />
         </div>
         <Button
           variant="outline"
+          size="sm"
           onClick={() => setIsExpanded(!isExpanded)}
-          className={hasActiveFilters ? 'border-blue-500 text-blue-600' : ''}
+          className={`h-9 ${hasActiveFilters ? 'border-blue-500 text-blue-600' : ''}`}
         >
-          <Filter className="w-4 h-4 mr-2" />
-          Filters
+          <Filter className="w-4 h-4 mr-1" />
           {hasActiveFilters && (
-            <span className="ml-2 w-2 h-2 bg-blue-500 rounded-full"></span>
+            <span className="ml-1 w-2 h-2 bg-blue-500 rounded-full"></span>
           )}
         </Button>
         {hasActiveFilters && (
-          <Button variant="ghost" onClick={clearFilters}>
+          <Button variant="ghost" size="sm" onClick={clearFilters} className="h-9">
             <X className="w-4 h-4" />
           </Button>
         )}
       </div>
 
-      {/* Advanced Filters */}
+      {/* Expanded Filters */}
       {isExpanded && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4 bg-slate-50 rounded-lg border border-slate-200">
-          {/* Sender Filter */}
-          <div className="space-y-2">
-            <Label htmlFor="sender" className="text-sm font-medium flex items-center">
-              <User className="w-4 h-4 mr-1" />
-              Sender
-            </Label>
-            <Input
-              id="sender"
-              value={filters.sender}
-              onChange={(e) => updateFilter('sender', e.target.value)}
-              placeholder="sender@example.com"
-              className="text-sm"
-            />
-          </div>
-
-          {/* Date Range Filter */}
-          <div className="space-y-2">
-            <Label className="text-sm font-medium flex items-center">
-              <Calendar className="w-4 h-4 mr-1" />
-              Date Range
-            </Label>
-            <Select value={filters.dateRange} onValueChange={(value) => updateFilter('dateRange', value)}>
-              <SelectTrigger className="text-sm">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All time</SelectItem>
-                <SelectItem value="today">Today</SelectItem>
-                <SelectItem value="week">This week</SelectItem>
-                <SelectItem value="month">This month</SelectItem>
-                <SelectItem value="year">This year</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Category Filter */}
-          <div className="space-y-2">
-            <Label className="text-sm font-medium flex items-center">
-              <Tag className="w-4 h-4 mr-1" />
-              Category
-            </Label>
-            <Select value={filters.category} onValueChange={(value) => updateFilter('category', value)}>
-              <SelectTrigger className="text-sm">
-                <SelectValue placeholder="All categories" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">All categories</SelectItem>
-                {categories.map((category) => (
-                  <SelectItem key={category} value={category}>
-                    {category}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Label Filter */}
-          <div className="space-y-2">
-            <Label className="text-sm font-medium">Labels</Label>
-            <Select value={filters.label} onValueChange={(value) => updateFilter('label', value)}>
-              <SelectTrigger className="text-sm">
-                <SelectValue placeholder="All labels" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">All labels</SelectItem>
-                {labels.map((label) => (
-                  <SelectItem key={label} value={label}>
-                    {label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Priority Filter */}
-          <div className="space-y-2">
-            <Label className="text-sm font-medium">Priority</Label>
-            <Select value={filters.priority} onValueChange={(value) => updateFilter('priority', value)}>
-              <SelectTrigger className="text-sm">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All priorities</SelectItem>
-                <SelectItem value="high">High</SelectItem>
-                <SelectItem value="medium">Medium</SelectItem>
-                <SelectItem value="low">Low</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Quick Filters */}
-          <div className="space-y-2">
-            <Label className="text-sm font-medium">Quick Filters</Label>
-            <div className="space-y-2">
-              <label className="flex items-center space-x-2 text-sm">
-                <input
-                  type="checkbox"
-                  checked={filters.isUnread}
-                  onChange={(e) => updateFilter('isUnread', e.target.checked)}
-                  className="rounded border-slate-300"
-                />
-                <span>Unread only</span>
-              </label>
-              <label className="flex items-center space-x-2 text-sm">
-                <input
-                  type="checkbox"
-                  checked={filters.hasAttachments}
-                  onChange={(e) => updateFilter('hasAttachments', e.target.checked)}
-                  className="rounded border-slate-300"
-                />
-                <span>Has attachments</span>
-              </label>
+        <div className="mt-3 p-4 bg-slate-50 rounded-lg border border-slate-200">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Sender</label>
+              <Input
+                value={filters.sender}
+                onChange={(e) => updateFilter('sender', e.target.value)}
+                placeholder="sender@example.com"
+                className="h-8 text-sm"
+              />
             </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Category</label>
+              <Select value={filters.category} onValueChange={(value) => updateFilter('category', value)}>
+                <SelectTrigger className="h-8 text-sm">
+                  <SelectValue placeholder="All categories" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">All categories</SelectItem>
+                  {categories.map((category) => (
+                    <SelectItem key={category} value={category}>
+                      {category}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Priority</label>
+              <Select value={filters.priority} onValueChange={(value) => updateFilter('priority', value)}>
+                <SelectTrigger className="h-8 text-sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All priorities</SelectItem>
+                  <SelectItem value="high">High</SelectItem>
+                  <SelectItem value="medium">Medium</SelectItem>
+                  <SelectItem value="low">Low</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          
+          <div className="mt-3 flex items-center space-x-4">
+            <label className="flex items-center space-x-2 text-sm">
+              <input
+                type="checkbox"
+                checked={filters.isUnread}
+                onChange={(e) => updateFilter('isUnread', e.target.checked)}
+                className="rounded border-slate-300"
+              />
+              <span>Unread only</span>
+            </label>
+            <label className="flex items-center space-x-2 text-sm">
+              <input
+                type="checkbox"
+                checked={filters.hasAttachments}
+                onChange={(e) => updateFilter('hasAttachments', e.target.checked)}
+                className="rounded border-slate-300"
+              />
+              <span>Has attachments</span>
+            </label>
           </div>
         </div>
       )}

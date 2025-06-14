@@ -31,29 +31,46 @@ const EmailBulkActions: React.FC<EmailBulkActionsProps> = ({
   availableLabels,
   isAllSelected
 }) => {
-  if (selectedCount === 0) {
+  // Prevent crashes with safety checks
+  const safeSelectedCount = selectedCount || 0;
+  const safeTotalCount = totalCount || 0;
+  const safeAvailableLabels = availableLabels || [];
+
+  if (safeSelectedCount === 0) {
     return (
-      <div className="flex items-center justify-between p-3 border-b border-slate-200 bg-slate-50">
+      <div className="flex items-center justify-between px-4 py-2 bg-white border-b border-slate-200">
         <div className="flex items-center space-x-3">
           <button
-            onClick={onSelectAll}
-            className="p-1 hover:bg-slate-200 rounded transition-colors"
+            onClick={() => {
+              try {
+                onSelectAll();
+              } catch (error) {
+                console.error('Error selecting all:', error);
+              }
+            }}
+            className="p-1 hover:bg-slate-100 rounded transition-colors"
             title="Select all"
           >
             <div className="w-4 h-4 border-2 border-slate-400 rounded"></div>
           </button>
-          <span className="text-sm text-slate-600">{totalCount} emails</span>
+          <span className="text-sm text-slate-600">{safeTotalCount} emails</span>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex items-center justify-between p-3 border-b border-slate-200 bg-blue-50">
+    <div className="flex items-center justify-between px-4 py-2 bg-blue-50 border-b border-slate-200">
       <div className="flex items-center space-x-3">
         <button
-          onClick={isAllSelected ? onDeselectAll : onSelectAll}
-          className="p-1 hover:bg-blue-200 rounded transition-colors"
+          onClick={() => {
+            try {
+              isAllSelected ? onDeselectAll() : onSelectAll();
+            } catch (error) {
+              console.error('Error toggling selection:', error);
+            }
+          }}
+          className="p-1 hover:bg-blue-100 rounded transition-colors"
           title={isAllSelected ? "Deselect all" : "Select all"}
         >
           <div className="w-4 h-4 bg-blue-600 border-2 border-blue-600 rounded flex items-center justify-center">
@@ -61,12 +78,11 @@ const EmailBulkActions: React.FC<EmailBulkActionsProps> = ({
           </div>
         </button>
         <span className="text-sm font-medium text-blue-800">
-          {selectedCount} email{selectedCount !== 1 ? 's' : ''} selected
+          {safeSelectedCount} email{safeSelectedCount !== 1 ? 's' : ''} selected
         </span>
       </div>
 
       <div className="flex items-center space-x-2">
-        {/* Mark as Read/Unread */}
         <Button variant="ghost" size="sm" onClick={onMarkAsRead} title="Mark as read">
           <MailOpen className="w-4 h-4" />
         </Button>
@@ -75,14 +91,13 @@ const EmailBulkActions: React.FC<EmailBulkActionsProps> = ({
           <Mail className="w-4 h-4" />
         </Button>
 
-        {/* Add Label */}
         <Select onValueChange={(value) => value && onAddLabel(value)}>
           <SelectTrigger className="w-auto border-none shadow-none p-2 h-auto">
             <Tag className="w-4 h-4" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="">Add label...</SelectItem>
-            {availableLabels.map((label) => (
+            {safeAvailableLabels.map((label) => (
               <SelectItem key={label} value={label}>
                 {label}
               </SelectItem>
@@ -92,7 +107,6 @@ const EmailBulkActions: React.FC<EmailBulkActionsProps> = ({
 
         <div className="w-px h-6 bg-slate-300 mx-2" />
 
-        {/* Delete */}
         <Button 
           variant="ghost" 
           size="sm" 
