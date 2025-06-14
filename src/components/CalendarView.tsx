@@ -1,6 +1,6 @@
 
-import React, { useState } from 'react';
-import { Calendar, ChevronLeft, ChevronRight, Plus, Clock, MapPin, Users, Zap } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Calendar, ChevronLeft, ChevronRight, Plus, Clock, MapPin, Users, Zap, AlertCircle } from 'lucide-react';
 import { Button } from './ui/button';
 import { useCalendar } from '../hooks/useCalendar';
 import { Task } from '../types';
@@ -13,14 +13,30 @@ interface CalendarViewProps {
 const CalendarView: React.FC<CalendarViewProps> = ({ tasks }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const { isAuthenticated, events, isLoading, error, insights, login, createEvent } = useCalendar(tasks);
+  const { isAuthenticated, events, isLoading, error, insights, login, createEvent, fetchEvents } = useCalendar(tasks);
 
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(currentDate);
   const monthDays = eachDayOfInterval({ start: monthStart, end: monthEnd });
 
+  // Fetch events when calendar becomes authenticated or date changes
+  useEffect(() => {
+    if (isAuthenticated) {
+      console.log('Calendar authenticated, fetching events...');
+      fetchEvents();
+    }
+  }, [isAuthenticated, fetchEvents]);
+
   const navigateMonth = (direction: 'prev' | 'next') => {
-    setCurrentDate(direction === 'prev' ? subMonths(currentDate, 1) : addMonths(currentDate, 1));
+    const newDate = direction === 'prev' ? subMonths(currentDate, 1) : addMonths(currentDate, 1);
+    setCurrentDate(newDate);
+    
+    // Fetch events for the new month
+    if (isAuthenticated) {
+      const monthStart = startOfMonth(newDate);
+      const monthEnd = endOfMonth(newDate);
+      fetchEvents(monthStart, monthEnd);
+    }
   };
 
   const getEventsForDate = (date: Date) => {
@@ -38,7 +54,12 @@ const CalendarView: React.FC<CalendarViewProps> = ({ tasks }) => {
       description: `Auto-scheduled from Saha AI - ${suggestion.reason}`
     };
 
-    await createEvent(eventData);
+    const success = await createEvent(eventData);
+    if (success) {
+      console.log('Event created successfully');
+    } else {
+      console.error('Failed to create event');
+    }
   };
 
   if (!isAuthenticated) {
@@ -60,6 +81,9 @@ const CalendarView: React.FC<CalendarViewProps> = ({ tasks }) => {
           >
             {isLoading ? 'Connecting...' : 'Connect Google Calendar'}
           </Button>
+          {error && (
+            <p className="text-red-500 text-sm mt-2">{error}</p>
+          )}
         </div>
       </div>
     );
@@ -73,7 +97,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({ tasks }) => {
           <div>
             <h2 className="text-2xl font-bold text-slate-800">Calendar</h2>
             <p className="text-slate-600">
-              {events.length} events • {insights?.freeSlots.length || 0} free slots today
+              {isLoading ? 'Loading events...' : `${events.length} events • ${insights?.freeSlots.length || 0} free slots today`}
             </p>
           </div>
           <div className="flex items-center space-x-3">
@@ -81,6 +105,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({ tasks }) => {
               variant="outline"
               size="sm"
               onClick={() => navigateMonth('prev')}
+              disabled={isLoading}
             >
               <ChevronLeft className="w-4 h-4" />
             </Button>
@@ -91,14 +116,32 @@ const CalendarView: React.FC<CalendarViewProps> = ({ tasks }) => {
               variant="outline"
               size="sm"
               onClick={() => navigateMonth('next')}
+              disabled={isLoading}
             >
               <ChevronRight className="w-4 h-4" />
+            </Button>
+            <Button
+              onClick={() => fetchEvents()}
+              variant="outline"
+              size="sm"
+              disabled={isLoading}
+            >
+              {isLoading ? 'Syncing...' : 'Refresh'}
             </Button>
           </div>
         </div>
 
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
+            <div className="flex items-center space-x-2">
+              <AlertCircle className="w-4 h-4 text-red-500" />
+              <p className="text-red-700 text-sm">{error}</p>
+            </div>
+          </div>
+        )}
+
         {/* AI Suggestions */}
-        {insights?.suggestedTasks.length > 0 && (
+        {insights?.suggestedTasks.length > 0 && !isLoading && (
           <div className="bg-white/80 rounded-lg p-4 border border-purple-200">
             <h3 className="text-sm font-semibold text-purple-800 mb-3 flex items-center">
               <Zap className="w-4 h-4 mr-2" />
@@ -117,6 +160,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({ tasks }) => {
                       onClick={() => handleCreateQuickEvent(suggestion)}
                       size="sm"
                       className="h-6 px-3 text-xs bg-purple-600 hover:bg-purple-700"
+                      disabled={isLoading}
                     >
                       Schedule
                     </Button>
@@ -167,7 +211,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({ tasks }) => {
                         <div
                           key={event.id}
                           className="text-xs bg-blue-100 text-blue-800 rounded px-1 py-0.5 truncate"
-                          title={event.title}
+                          title={`${event.title} - ${format(event.start, 'h:mm a')}`}
                         >
                           {event.title}
                         </div>
@@ -252,6 +296,14 @@ const CalendarView: React.FC<CalendarViewProps> = ({ tasks }) => {
                   </div>
                 ))}
               </div>
+            </div>
+          )}
+
+          {/* Loading State for Side Panel */}
+          {isLoading && (
+            <div className="flex items-center justify-center py-8">
+              <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mr-2"></div>
+              <span className="text-sm text-slate-600">Loading events...</span>
             </div>
           )}
         </div>

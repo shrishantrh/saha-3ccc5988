@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Mail, Clock, AlertCircle, CheckCircle, X, MoreHorizontal, Settings as SettingsIcon, MessageCircle, Calendar, Edit, Plus, Filter, Search, Tag } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -120,7 +121,7 @@ const Index = () => {
   const [isLabelsVisible, setIsLabelsVisible] = useState(false);
   const [showSearchBar, setShowSearchBar] = useState(false);
 
-  // Generate AI categories from emails
+  // Generate AI categories from emails and ensure they're applied as labels
   const aiCategories = React.useMemo(() => {
     const categoryCount: { [key: string]: number } = {};
     emails.forEach(email => {
@@ -157,11 +158,15 @@ const Index = () => {
     
     if (isAuthenticated && gmailEmails.length > 0) {
       console.log('Updating emails with Gmail data');
-      // Add mock labels to Gmail emails for demonstration
-      const emailsWithLabels = gmailEmails.map(email => ({
-        ...email,
-        labels: generateAILabels(email)
-      }));
+      // Apply AI category as label and add any existing custom labels
+      const emailsWithLabels = gmailEmails.map(email => {
+        const existingLabels = (email as any).labels || [];
+        const categoryLabel = email.category ? [email.category] : [];
+        return {
+          ...email,
+          labels: [...new Set([...categoryLabel, ...existingLabels])]
+        };
+      });
       setEmails(emailsWithLabels);
       setSelectedEmail(null);
       
@@ -171,27 +176,6 @@ const Index = () => {
       }
     }
   }, [isAuthenticated, gmailEmails, aiTasks, isGeminiConnected]);
-
-  // AI label generation function
-  const generateAILabels = (email: Email): string[] => {
-    const labels = [];
-    
-    // Priority-based labels
-    if (email.priority === 'high') labels.push('Important');
-    
-    // Category-based labels
-    if (email.category === 'Academic' || email.category === 'Work') labels.push('Work');
-    if (email.category === 'Personal') labels.push('Personal');
-    if (email.category === 'Events') labels.push('Events');
-    
-    // Content-based labels
-    const content = (email.subject + ' ' + email.snippet).toLowerCase();
-    if (content.includes('deadline') || content.includes('urgent')) labels.push('Deadline');
-    if (content.includes('research') || content.includes('collaboration')) labels.push('Research');
-    if (content.includes('meeting') || content.includes('appointment')) labels.push('Meeting');
-    
-    return [...new Set(labels)]; // Remove duplicates
-  };
 
   // Trigger refetch when Gemini service becomes available
   useEffect(() => {
@@ -283,27 +267,32 @@ const Index = () => {
     setSelectedLabel('');
   };
 
-  // Bulk Actions
+  // Bulk Actions - Fixed checkbox handling
   const handleSelectEmail = (emailId: string) => {
     console.log('handleSelectEmail called with:', emailId);
     setSelectedEmails(prev => {
       const newSelected = new Set(prev);
       if (newSelected.has(emailId)) {
         newSelected.delete(emailId);
+        console.log('Removed email from selection:', emailId);
       } else {
         newSelected.add(emailId);
+        console.log('Added email to selection:', emailId);
       }
-      console.log('New selected emails:', newSelected);
+      console.log('New selected emails:', Array.from(newSelected));
       return newSelected;
     });
   };
 
   const handleSelectAll = () => {
-    setSelectedEmails(new Set(filteredEmails.map(email => email.id)));
+    const emailsToSelect = filteredEmails.length > 0 ? filteredEmails : emails;
+    setSelectedEmails(new Set(emailsToSelect.map(email => email.id)));
+    console.log('Selected all emails:', emailsToSelect.length);
   };
 
   const handleDeselectAll = () => {
     setSelectedEmails(new Set());
+    console.log('Deselected all emails');
   };
 
   const handleBulkMarkAsRead = () => {
@@ -334,10 +323,13 @@ const Index = () => {
   const handleAddLabel = (labelName: string) => {
     if (!labelName) return;
     
+    console.log('Adding label', labelName, 'to emails:', Array.from(selectedEmails));
+    
     setEmails(prev => prev.map(email => {
       if (selectedEmails.has(email.id)) {
         const emailLabels = (email as any).labels || [];
         if (!emailLabels.includes(labelName)) {
+          console.log('Adding label', labelName, 'to email', email.id);
           return { ...email, labels: [...emailLabels, labelName] };
         }
       }
@@ -469,14 +461,74 @@ const Index = () => {
                 AI-Powered Email Intelligence
               </span>
             </div>
+
+            {/* View Toggle - Moved here */}
+            {isAuthenticated && (
+              <div className="flex items-center space-x-1 bg-gray-100 rounded-lg p-1 ml-8">
+                <button
+                  onClick={() => setCurrentView('email')}
+                  className={`flex items-center space-x-2 px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
+                    currentView === 'email'
+                      ? 'bg-white text-blue-600 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-800'
+                  }`}
+                >
+                  <Mail className="w-4 h-4" />
+                  <span>Inbox</span>
+                </button>
+                <button
+                  onClick={() => setCurrentView('calendar')}
+                  className={`flex items-center space-x-2 px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
+                    currentView === 'calendar'
+                      ? 'bg-white text-purple-600 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-800'
+                  }`}
+                >
+                  <Calendar className="w-4 h-4" />
+                  <span>Calendar</span>
+                </button>
+              </div>
+            )}
           </div>
 
           <div className="flex items-center space-x-3">
+            {/* Search and Labels Controls - Moved here */}
+            {isAuthenticated && (
+              <>
+                <button
+                  onClick={() => setShowSearchBar(!showSearchBar)}
+                  className={`p-2 rounded-lg transition-colors ${
+                    showSearchBar 
+                      ? 'bg-blue-100 text-blue-600' 
+                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+                  }`}
+                  title="Search"
+                >
+                  <Search className="w-5 h-5" />
+                </button>
+                
+                <button
+                  onClick={() => setIsLabelsVisible(!isLabelsVisible)}
+                  className={`flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    isLabelsVisible 
+                      ? 'bg-blue-100 text-blue-600' 
+                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+                  }`}
+                  title="Toggle Labels"
+                >
+                  <Tag className="w-4 h-4" />
+                  <span>Labels</span>
+                </button>
+              </>
+            )}
+
             {/* Status Indicator */}
-            <div className="flex items-center space-x-2 px-3 py-2 bg-green-50 text-green-700 rounded-lg border border-green-200">
-              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-              <span className="font-medium text-sm">Gmail Connected</span>
-            </div>
+            {isAuthenticated && (
+              <div className="flex items-center space-x-2 px-3 py-2 bg-green-50 text-green-700 rounded-lg border border-green-200">
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                <span className="font-medium text-sm">Gmail Connected</span>
+              </div>
+            )}
 
             {/* Action Buttons */}
             <button
@@ -506,86 +558,27 @@ const Index = () => {
             </Link>
           </div>
         </div>
+
+        {/* Expandable Search Bar */}
+        {showSearchBar && isAuthenticated && (
+          <div className="mt-3 animate-fade-in">
+            <EmailSearch
+              onSearch={handleSearch}
+              onClear={() => {
+                handleClearSearch();
+                setShowSearchBar(false);
+              }}
+              categories={categories}
+              labels={labels.map(l => l.name)}
+            />
+          </div>
+        )}
       </header>
 
       {isAuthenticated ? (
         <>
-          {/* Compact Control Bar */}
-          <div className="bg-white border-b border-gray-200 px-6 py-3">
-            <div className="flex items-center justify-between">
-              {/* View Toggle */}
-              <div className="flex items-center space-x-1 bg-gray-100 rounded-lg p-1">
-                <button
-                  onClick={() => setCurrentView('email')}
-                  className={`flex items-center space-x-2 px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
-                    currentView === 'email'
-                      ? 'bg-white text-blue-600 shadow-sm'
-                      : 'text-gray-600 hover:text-gray-800'
-                  }`}
-                >
-                  <Mail className="w-4 h-4" />
-                  <span>Inbox</span>
-                </button>
-                <button
-                  onClick={() => setCurrentView('calendar')}
-                  className={`flex items-center space-x-2 px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
-                    currentView === 'calendar'
-                      ? 'bg-white text-purple-600 shadow-sm'
-                      : 'text-gray-600 hover:text-gray-800'
-                  }`}
-                >
-                  <Calendar className="w-4 h-4" />
-                  <span>Calendar</span>
-                </button>
-              </div>
-
-              {/* Right Controls */}
-              <div className="flex items-center space-x-2">
-                <button
-                  onClick={() => setShowSearchBar(!showSearchBar)}
-                  className={`p-2 rounded-lg transition-colors ${
-                    showSearchBar 
-                      ? 'bg-blue-100 text-blue-600' 
-                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
-                  }`}
-                  title="Search"
-                >
-                  <Search className="w-5 h-5" />
-                </button>
-                
-                <button
-                  onClick={() => setIsLabelsVisible(!isLabelsVisible)}
-                  className={`flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    isLabelsVisible 
-                      ? 'bg-blue-100 text-blue-600' 
-                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
-                  }`}
-                  title="Toggle Labels"
-                >
-                  <Tag className="w-4 h-4" />
-                  <span>Labels</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Expandable Search Bar */}
-            {showSearchBar && (
-              <div className="mt-3 animate-fade-in">
-                <EmailSearch
-                  onSearch={handleSearch}
-                  onClear={() => {
-                    handleClearSearch();
-                    setShowSearchBar(false);
-                  }}
-                  categories={categories}
-                  labels={labels.map(l => l.name)}
-                />
-              </div>
-            )}
-          </div>
-
           {currentView === 'email' ? (
-            <div className="flex h-[calc(100vh-170px)]">
+            <div className="flex h-[calc(100vh-120px)]">
               {/* Collapsible Labels Panel */}
               {isLabelsVisible && (
                 <div className="w-64 bg-white border-r border-gray-200 animate-slide-in-right">
@@ -613,11 +606,11 @@ const Index = () => {
                     onDeselectAll={handleDeselectAll}
                     onMarkAsRead={handleBulkMarkAsRead}
                     onMarkAsUnread={handleBulkMarkAsUnread}
-                    onArchive={() => {}}
+                    onArchive={handleBulkArchive}
                     onDelete={handleBulkDelete}
                     onAddLabel={handleAddLabel}
                     onStar={() => {}}
-                    availableLabels={labels.map(l => l.name)}
+                    availableLabels={[...labels.map(l => l.name), ...aiCategories.map(c => c.name)]}
                     isAllSelected={selectedEmails.size === displayEmails.length && displayEmails.length > 0}
                   />
 
@@ -696,7 +689,7 @@ const Index = () => {
               </div>
             </div>
           ) : (
-            <div className="h-[calc(100vh-170px)]">
+            <div className="h-[calc(100vh-120px)]">
               <CalendarView tasks={tasks} />
             </div>
           )}

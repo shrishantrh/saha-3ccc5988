@@ -57,16 +57,16 @@ const EmailList: React.FC<EmailListProps> = ({
   };
 
   const handleEmailClick = (email: Email, e: React.MouseEvent) => {
-    // Stop propagation only for interactive elements
+    // Don't select email if clicking on checkbox
     const target = e.target as HTMLElement;
-    if (target.tagName === 'INPUT' || (target as HTMLInputElement).type === 'checkbox') {
+    if (target.type === 'checkbox' || target.closest('input[type="checkbox"]')) {
       e.stopPropagation();
       return;
     }
     onEmailSelect(email);
   };
 
-  const handleCheckboxChange = (emailId: string, e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleCheckboxClick = (emailId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
     console.log('Checkbox clicked for email:', emailId);
@@ -117,12 +117,12 @@ const EmailList: React.FC<EmailListProps> = ({
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center space-x-3 flex-1 min-w-0">
                   {onSelectEmail && (
-                    <div onClick={(e) => e.stopPropagation()}>
+                    <div onClick={(e) => handleCheckboxClick(email.id, e)} className="cursor-pointer">
                       <input
                         type="checkbox"
                         checked={isSelected}
-                        onChange={(e) => handleCheckboxChange(email.id, e)}
-                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 focus:ring-2 w-4 h-4"
+                        onChange={() => {}} // Controlled by click handler
+                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 focus:ring-2 w-4 h-4 pointer-events-none"
                       />
                     </div>
                   )}
@@ -185,6 +185,13 @@ const EmailList: React.FC<EmailListProps> = ({
                     <Tag className="w-3 h-3 mr-1" />
                     {email.category}
                   </span>
+                  
+                  {/* Show additional labels applied to this email */}
+                  {(email as any).labels?.filter((label: string) => label !== email.category).slice(0, 2).map((label: string) => (
+                    <span key={label} className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-purple-50 text-purple-700 border border-purple-200">
+                      {label}
+                    </span>
+                  ))}
                   
                   {(email.aiAnalysis as any)?.actionRequired && (
                     <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200">
