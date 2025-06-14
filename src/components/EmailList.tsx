@@ -62,7 +62,7 @@ const EmailList: React.FC<EmailListProps> = ({
     onEmailSelect(email);
   };
 
-  const handleCheckboxClick = (emailId: string, e: React.MouseEvent) => {
+  const handleCheckboxChange = (emailId: string, e: React.ChangeEvent<HTMLInputElement>) => {
     e.stopPropagation();
     if (onSelectEmail) {
       onSelectEmail(emailId);
@@ -108,7 +108,7 @@ const EmailList: React.FC<EmailListProps> = ({
                       <input
                         type="checkbox"
                         checked={isSelected}
-                        onChange={(e) => handleCheckboxClick(email.id, e)}
+                        onChange={(e) => handleCheckboxChange(email.id, e)}
                         className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
                         onClick={(e) => e.stopPropagation()}
                       />
