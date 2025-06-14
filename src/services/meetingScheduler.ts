@@ -1,4 +1,3 @@
-
 import { GeminiService } from './geminiService';
 import { googleCalendarService } from './googleCalendarService';
 
@@ -178,6 +177,8 @@ Return the 3 best time slots in this JSON format:
       return freeSlots.slice(0, 3);
     } catch (error) {
       console.error('Error suggesting optimal times:', error);
+      // Fixed: use freeSlots instead of undefined variable
+      const freeSlots = availableSlots.filter(slot => slot.available);
       return freeSlots.slice(0, 3);
     }
   }
