@@ -18,7 +18,7 @@ interface EmailChatProps {
 
 const EmailChat: React.FC<EmailChatProps> = ({ geminiService, emails, tasks, isOpen, onClose }) => {
   const { messages, isLoading, sendMessage, clearChat, smartSuggestions, generateSmartSuggestions } = useEmailChat(geminiService, emails);
-  const { isAuthenticated: isCalendarConnected, insights } = useCalendar(tasks);
+  const { isAuthenticated: isCalendarConnected, insights, createEvent } = useCalendar(tasks);
   const [inputMessage, setInputMessage] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -41,15 +41,78 @@ const EmailChat: React.FC<EmailChatProps> = ({ geminiService, emails, tasks, isO
     if (!inputMessage.trim() || isLoading) return;
 
     // Check if this is a calendar-related query
-    const calendarKeywords = ['free time', 'schedule', 'calendar', 'available', 'busy', 'meeting', 'appointment', 'time slot'];
+    const calendarKeywords = ['free time', 'schedule', 'calendar', 'available', 'busy', 'meeting', 'appointment', 'time slot', 'create event', 'book', 'plan'];
     const isCalendarQuery = calendarKeywords.some(keyword => 
       inputMessage.toLowerCase().includes(keyword)
     );
 
-    if (isCalendarQuery && isCalendarConnected && insights && geminiService) {
+    // Check for event creation requests
+    const eventCreationKeywords = ['create event', 'schedule meeting', 'book appointment', 'add to calendar', 'plan meeting'];
+    const isEventCreation = eventCreationKeywords.some(keyword => 
+      inputMessage.toLowerCase().includes(keyword)
+    );
+
+    if (isEventCreation && isCalendarConnected && geminiService) {
+      // Handle event creation
+      const eventMatch = inputMessage.match(/(?:create event|schedule meeting|book appointment)(?:\s+for\s+|\s+)?"([^"]+)"|(?:create event|schedule meeting|book appointment)\s+(.+?)(?:\s+at\s+|\s+on\s+|$)/i);
+      const timeMatch = inputMessage.match(/(?:at\s+|on\s+)(\d{1,2}(?::\d{2})?\s*(?:am|pm))/i);
+      const dateMatch = inputMessage.match(/(?:on\s+|for\s+)?(today|tomorrow|monday|tuesday|wednesday|thursday|friday|saturday|sunday|\d{1,2}\/\d{1,2})/i);
+      
+      if (eventMatch) {
+        const eventTitle = eventMatch[1] || eventMatch[2];
+        let eventDate = new Date();
+        
+        if (dateMatch) {
+          const dateStr = dateMatch[1].toLowerCase();
+          if (dateStr === 'tomorrow') {
+            eventDate.setDate(eventDate.getDate() + 1);
+          }
+          // Add more date parsing logic as needed
+        }
+        
+        if (timeMatch) {
+          const timeStr = timeMatch[1];
+          const [time, period] = timeStr.split(/\s*(am|pm)/i);
+          let [hours, minutes = '0'] = time.split(':');
+          hours = parseInt(hours);
+          if (period?.toLowerCase() === 'pm' && hours !== 12) hours += 12;
+          if (period?.toLowerCase() === 'am' && hours === 12) hours = 0;
+          
+          eventDate.setHours(hours, parseInt(minutes), 0, 0);
+        } else {
+          // Default to next available free slot
+          if (insights?.freeSlots.length > 0) {
+            eventDate = insights.freeSlots[0].start;
+          }
+        }
+        
+        const endDate = new Date(eventDate.getTime() + 60 * 60 * 1000); // 1 hour duration
+        
+        try {
+          const success = await createEvent({
+            title: eventTitle,
+            start: eventDate,
+            end: endDate,
+            description: `Created via Saha AI Assistant`
+          });
+          
+          if (success) {
+            const confirmationMessage = `✅ Event "${eventTitle}" has been created for ${eventDate.toLocaleDateString()} at ${eventDate.toLocaleTimeString()}`;
+            // Add the user message and AI response
+            await sendMessage(inputMessage);
+            // The success message will be handled by the regular sendMessage flow
+          } else {
+            await sendMessage(inputMessage + " (Note: There was an issue creating the calendar event)");
+          }
+        } catch (error) {
+          await sendMessage(inputMessage + " (Note: Failed to create calendar event)");
+        }
+      } else {
+        await sendMessage(inputMessage);
+      }
+    } else if (isCalendarQuery && isCalendarConnected && insights && geminiService) {
       try {
         const calendarResponse = await geminiService.generateCalendarSuggestions(inputMessage, tasks, insights);
-        // This will be handled by the enhanced sendMessage function
         await sendMessage(inputMessage);
       } catch (error) {
         console.error('Calendar query error:', error);
@@ -75,8 +138,9 @@ const EmailChat: React.FC<EmailChatProps> = ({ geminiService, emails, tasks, isO
 
   const calendarSuggestions = isCalendarConnected && insights ? [
     `I have ${insights.freeSlots.length} free slots tomorrow — what should I do?`,
-    'What tasks should I focus on during my next free hour?',
-    'Help me schedule my high-priority tasks this week'
+    'Create event for team meeting at 2 PM tomorrow',
+    'Schedule a focus session during my next free hour',
+    'Help me plan my high-priority tasks this week'
   ] : [];
 
   if (!isOpen) return null;

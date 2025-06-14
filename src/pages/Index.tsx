@@ -95,6 +95,7 @@ const Index = () => {
   const [tasks, setTasks] = useState<Task[]>(mockTasks);
   const [replyTo, setReplyTo] = useState<Email | null>(null);
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const [currentView, setCurrentView] = useState<'email' | 'calendar'>('email');
 
   // Update emails and tasks when Gmail emails change OR when Gemini connection changes
   useEffect(() => {
@@ -228,82 +229,107 @@ const Index = () => {
 
       {isAuthenticated ? (
         <>
-          {/* Main Layout with Calendar Panel */}
-          <div className="flex h-[calc(100vh-88px)]">
-            {/* Email List Panel - Fixed width */}
-            <div className="w-80 bg-white/70 backdrop-blur-sm border-r border-slate-200 shadow-sm">
-              {isLoading ? (
-                <div className="flex flex-col items-center justify-center h-full p-6">
-                  <div className="w-10 h-10 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mb-4"></div>
-                  <p className="text-slate-700 font-medium">Loading emails...</p>
-                  {isGeminiConnected && (
-                    <p className="text-sm text-purple-600 mt-2">✨ Analyzing with Gemini AI</p>
-                  )}
-                </div>
-              ) : error ? (
-                <div className="flex flex-col items-center justify-center h-full p-6">
-                  <AlertCircle className="w-12 h-12 text-red-500 mb-4" />
-                  <p className="text-slate-800 font-medium mb-2">Error loading emails</p>
-                  <p className="text-slate-600 mb-4 text-center text-sm">{error}</p>
-                  <button 
-                    onClick={() => refetch()} 
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-md"
-                  >
-                    Try Again
-                  </button>
-                </div>
-              ) : (
-                <EmailList 
-                  emails={emails} 
-                  onEmailSelect={handleEmailSelect}
-                  selectedEmail={selectedEmail}
-                />
-              )}
-            </div>
-
-            {/* Email Detail Panel - Flexible width with max constraint */}
-            <div className="flex-1 bg-white/50 backdrop-blur-sm max-w-3xl">
-              {selectedEmail ? (
-                <EmailDetail 
-                  email={selectedEmail} 
-                  onReply={() => handleReplyClick(selectedEmail)}
-                />
-              ) : (
-                <div className="h-full flex items-center justify-center">
-                  <div className="text-center text-slate-500">
-                    <div className="w-16 h-16 bg-gradient-to-r from-blue-100 to-purple-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                      <Mail className="w-8 h-8 text-blue-600" />
-                    </div>
-                    <h3 className="text-xl font-semibold mb-3 text-slate-800">Select an email</h3>
-                    <p className="text-sm text-slate-600">Choose an email from the list to view details and AI insights</p>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Calendar Panel - Fixed width */}
-            <div className="w-80 bg-white/70 backdrop-blur-sm border-r border-slate-200 shadow-sm">
-              <CalendarPanel 
-                tasks={tasks}
-                onCreateEvent={(eventData) => {
-                  console.log('Event created:', eventData);
-                }}
-              />
-            </div>
-
-            {/* Task Panel - Fixed width */}
-            <div className="w-80 bg-white/70 backdrop-blur-sm border-l border-slate-200 shadow-sm">
-              <TaskPanel 
-                tasks={tasks}
-                emails={emails}
-                onTaskComplete={handleTaskComplete}
-                onTaskDelete={handleTaskDelete}
-                onTaskPriorityChange={handleTaskPriorityChange}
-                onEmailSelect={handleEmailSelect}
-                onTaskDateChange={handleTaskDateChange}
-              />
+          {/* View Toggle */}
+          <div className="bg-white/70 backdrop-blur-sm border-b border-slate-200 px-6 py-3">
+            <div className="flex items-center space-x-1 bg-slate-100 rounded-lg p-1 w-fit">
+              <button
+                onClick={() => setCurrentView('email')}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
+                  currentView === 'email'
+                    ? 'bg-white text-blue-600 shadow-sm'
+                    : 'text-slate-600 hover:text-slate-800'
+                }`}
+              >
+                <Mail className="w-4 h-4 mr-2 inline" />
+                Email View
+              </button>
+              <button
+                onClick={() => setCurrentView('calendar')}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
+                  currentView === 'calendar'
+                    ? 'bg-white text-purple-600 shadow-sm'
+                    : 'text-slate-600 hover:text-slate-800'
+                }`}
+              >
+                <Calendar className="w-4 h-4 mr-2 inline" />
+                Calendar View
+              </button>
             </div>
           </div>
+
+          {currentView === 'email' ? (
+            /* Email Layout */
+            <div className="flex h-[calc(100vh-144px)]">
+              {/* Email List Panel - Fixed width */}
+              <div className="w-80 bg-white/70 backdrop-blur-sm border-r border-slate-200 shadow-sm">
+                {isLoading ? (
+                  <div className="flex flex-col items-center justify-center h-full p-6">
+                    <div className="w-10 h-10 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mb-4"></div>
+                    <p className="text-slate-700 font-medium">Loading emails...</p>
+                    {isGeminiConnected && (
+                      <p className="text-sm text-purple-600 mt-2">✨ Analyzing with Gemini AI</p>
+                    )}
+                  </div>
+                ) : error ? (
+                  <div className="flex flex-col items-center justify-center h-full p-6">
+                    <AlertCircle className="w-12 h-12 text-red-500 mb-4" />
+                    <p className="text-slate-800 font-medium mb-2">Error loading emails</p>
+                    <p className="text-slate-600 mb-4 text-center text-sm">{error}</p>
+                    <button 
+                      onClick={() => refetch()} 
+                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-md"
+                    >
+                      Try Again
+                    </button>
+                  </div>
+                ) : (
+                  <EmailList 
+                    emails={emails} 
+                    onEmailSelect={handleEmailSelect}
+                    selectedEmail={selectedEmail}
+                  />
+                )}
+              </div>
+
+              {/* Email Detail Panel - Flexible width with max constraint */}
+              <div className="flex-1 bg-white/50 backdrop-blur-sm max-w-3xl">
+                {selectedEmail ? (
+                  <EmailDetail 
+                    email={selectedEmail} 
+                    onReply={() => handleReplyClick(selectedEmail)}
+                  />
+                ) : (
+                  <div className="h-full flex items-center justify-center">
+                    <div className="text-center text-slate-500">
+                      <div className="w-16 h-16 bg-gradient-to-r from-blue-100 to-purple-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <Mail className="w-8 h-8 text-blue-600" />
+                      </div>
+                      <h3 className="text-xl font-semibold mb-3 text-slate-800">Select an email</h3>
+                      <p className="text-sm text-slate-600">Choose an email from the list to view details and AI insights</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Task Panel - Fixed width */}
+              <div className="w-80 bg-white/70 backdrop-blur-sm border-l border-slate-200 shadow-sm">
+                <TaskPanel 
+                  tasks={tasks}
+                  emails={emails}
+                  onTaskComplete={handleTaskComplete}
+                  onTaskDelete={handleTaskDelete}
+                  onTaskPriorityChange={handleTaskPriorityChange}
+                  onEmailSelect={handleEmailSelect}
+                  onTaskDateChange={handleTaskDateChange}
+                />
+              </div>
+            </div>
+          ) : (
+            /* Calendar Layout */
+            <div className="h-[calc(100vh-144px)]">
+              <CalendarView tasks={tasks} />
+            </div>
+          )}
 
           {/* Reply Interface */}
           {replyTo && (
