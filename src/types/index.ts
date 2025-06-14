@@ -10,6 +10,7 @@ export interface Email {
   timestamp: string;
   priority: 'low' | 'medium' | 'high';
   read: boolean;
+  labels?: string[];
   aiAnalysis?: {
     summary: string;
     category: string;
