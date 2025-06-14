@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Mail, Clock, AlertCircle, CheckCircle, X, MoreHorizontal, Settings as SettingsIcon, MessageCircle, Calendar, Edit, Plus } from 'lucide-react';
+import { Mail, Clock, AlertCircle, CheckCircle, X, MoreHorizontal, Settings as SettingsIcon, MessageCircle, Calendar, Edit, Plus, Filter, Search, Tag } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import EmailList from '../components/EmailList';
 import EmailDetail from '../components/EmailDetail';
@@ -117,7 +117,8 @@ const Index = () => {
     { id: '6', name: 'Deadline', color: '#dc2626', count: 1 }
   ]);
   const [selectedLabel, setSelectedLabel] = useState<string>('');
-  const [isLabelsVisible, setIsLabelsVisible] = useState(true);
+  const [isLabelsVisible, setIsLabelsVisible] = useState(false);
+  const [showSearchBar, setShowSearchBar] = useState(false);
 
   // Update emails and tasks when Gmail emails change OR when Gemini connection changes
   useEffect(() => {
@@ -412,120 +413,142 @@ const Index = () => {
   const displayEmails = filteredEmails.length > 0 || selectedLabel ? filteredEmails : emails;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50">
-      {/* Header */}
-      <header className="bg-white/90 backdrop-blur-md border-b border-slate-200 px-6 py-3 shadow-sm">
+    <div className="min-h-screen bg-gray-50">
+      {/* Modern Header */}
+      <header className="bg-white border-b border-gray-200 px-6 py-4 shadow-sm">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
-            <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center shadow-lg">
-              <Mail className="w-5 h-5 text-white" />
+            <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+              <Mail className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                 Saha
               </h1>
-              <span className="text-xs text-slate-500 font-medium">
+              <span className="text-sm text-gray-500 font-medium">
                 AI-Powered Email Intelligence
               </span>
             </div>
           </div>
-          <div className="flex items-center space-x-4 text-sm">
-            <div className="flex items-center space-x-2 px-2 py-1 bg-green-100 text-green-700 rounded-full">
-              <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
-              <span className="font-medium text-xs">Gmail Connected</span>
+
+          <div className="flex items-center space-x-3">
+            {/* Status Indicator */}
+            <div className="flex items-center space-x-2 px-3 py-2 bg-green-50 text-green-700 rounded-lg border border-green-200">
+              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+              <span className="font-medium text-sm">Gmail Connected</span>
             </div>
 
-            <div className="flex items-center space-x-2">
+            {/* Action Buttons */}
+            <button
+              onClick={handleCompose}
+              className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200 shadow-md hover:shadow-lg"
+            >
+              <Edit className="w-4 h-4" />
+              <span className="font-medium">Compose</span>
+            </button>
+
+            {isGeminiConnected && (
               <button
-                onClick={handleCompose}
-                className="flex items-center space-x-2 px-3 py-1.5 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200 shadow-md text-sm"
+                onClick={() => setIsChatOpen(true)}
+                className="p-2 text-gray-500 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-all duration-200"
+                title="AI Assistant"
               >
-                <Edit className="w-4 h-4" />
-                <span>Compose</span>
+                <MessageCircle className="w-5 h-5" />
               </button>
+            )}
 
-              {isGeminiConnected && (
-                <button
-                  onClick={() => setIsChatOpen(true)}
-                  className="p-2 text-slate-500 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-all duration-200"
-                  title="AI Chat Assistant"
-                >
-                  <MessageCircle className="w-4 h-4" />
-                </button>
-              )}
-
-              <Link 
-                to="/settings" 
-                className="p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-all duration-200"
-                title="Settings"
-              >
-                <SettingsIcon className="w-4 h-4" />
-              </Link>
-            </div>
+            <Link 
+              to="/settings" 
+              className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-all duration-200"
+              title="Settings"
+            >
+              <SettingsIcon className="w-5 h-5" />
+            </Link>
           </div>
         </div>
       </header>
 
       {isAuthenticated ? (
         <>
-          {/* Combined Control Bar */}
-          <div className="bg-white/70 backdrop-blur-sm border-b border-slate-200 px-6 py-3">
-            <div className="flex items-center justify-between gap-4">
-              {/* Left: View Toggle */}
-              <div className="flex items-center space-x-1 bg-slate-100 rounded-lg p-1">
+          {/* Compact Control Bar */}
+          <div className="bg-white border-b border-gray-200 px-6 py-3">
+            <div className="flex items-center justify-between">
+              {/* View Toggle */}
+              <div className="flex items-center space-x-1 bg-gray-100 rounded-lg p-1">
                 <button
                   onClick={() => setCurrentView('email')}
-                  className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200 ${
+                  className={`flex items-center space-x-2 px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
                     currentView === 'email'
                       ? 'bg-white text-blue-600 shadow-sm'
-                      : 'text-slate-600 hover:text-slate-800'
+                      : 'text-gray-600 hover:text-gray-800'
                   }`}
                 >
-                  <Mail className="w-4 h-4 mr-2 inline" />
-                  Email View
+                  <Mail className="w-4 h-4" />
+                  <span>Inbox</span>
                 </button>
                 <button
                   onClick={() => setCurrentView('calendar')}
-                  className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200 ${
+                  className={`flex items-center space-x-2 px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
                     currentView === 'calendar'
                       ? 'bg-white text-purple-600 shadow-sm'
-                      : 'text-slate-600 hover:text-slate-800'
+                      : 'text-gray-600 hover:text-gray-800'
                   }`}
                 >
-                  <Calendar className="w-4 h-4 mr-2 inline" />
-                  Calendar View
+                  <Calendar className="w-4 h-4" />
+                  <span>Calendar</span>
                 </button>
               </div>
 
-              {/* Center: Search Bar (only in email view) */}
-              {currentView === 'email' && (
-                <div className="flex-1 max-w-2xl">
-                  <EmailSearch
-                    onSearch={handleSearch}
-                    onClear={handleClearSearch}
-                    categories={categories}
-                    labels={labels.map(l => l.name)}
-                  />
-                </div>
-              )}
-              
-              {/* Right: Labels Toggle */}
-              {currentView === 'email' && (
+              {/* Right Controls */}
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={() => setShowSearchBar(!showSearchBar)}
+                  className={`p-2 rounded-lg transition-colors ${
+                    showSearchBar 
+                      ? 'bg-blue-100 text-blue-600' 
+                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+                  }`}
+                  title="Search"
+                >
+                  <Search className="w-5 h-5" />
+                </button>
+                
                 <button
                   onClick={() => setIsLabelsVisible(!isLabelsVisible)}
-                  className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 rounded-lg text-sm font-medium text-slate-600 transition-colors"
+                  className={`flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    isLabelsVisible 
+                      ? 'bg-blue-100 text-blue-600' 
+                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+                  }`}
+                  title="Toggle Labels"
                 >
-                  {isLabelsVisible ? 'Hide Labels' : 'Show Labels'}
+                  <Tag className="w-4 h-4" />
+                  <span>Labels</span>
                 </button>
-              )}
+              </div>
             </div>
+
+            {/* Expandable Search Bar */}
+            {showSearchBar && (
+              <div className="mt-3 animate-fade-in">
+                <EmailSearch
+                  onSearch={handleSearch}
+                  onClear={() => {
+                    handleClearSearch();
+                    setShowSearchBar(false);
+                  }}
+                  categories={categories}
+                  labels={labels.map(l => l.name)}
+                />
+              </div>
+            )}
           </div>
 
           {currentView === 'email' ? (
-            <div className="flex h-[calc(100vh-140px)]">
-              {/* Labels Panel - Collapsible */}
+            <div className="flex h-[calc(100vh-170px)]">
+              {/* Collapsible Labels Panel */}
               {isLabelsVisible && (
-                <div className="w-56 border-r border-slate-200">
+                <div className="w-64 bg-white border-r border-gray-200 animate-slide-in-right">
                   <EmailLabels
                     labels={labels}
                     onCreateLabel={handleCreateLabel}
@@ -537,95 +560,102 @@ const Index = () => {
                 </div>
               )}
 
-              {/* Main Content */}
-              <div className="flex-1 flex flex-col min-w-0">
-                {/* Bulk Actions */}
-                <EmailBulkActions
-                  selectedCount={selectedEmails.size}
-                  totalCount={displayEmails.length}
-                  onSelectAll={handleSelectAll}
-                  onDeselectAll={handleDeselectAll}
-                  onMarkAsRead={handleBulkMarkAsRead}
-                  onMarkAsUnread={handleBulkMarkAsUnread}
-                  onArchive={() => {}}
-                  onDelete={handleBulkDelete}
-                  onAddLabel={handleAddLabel}
-                  onStar={() => {}}
-                  availableLabels={labels.map(l => l.name)}
-                  isAllSelected={selectedEmails.size === displayEmails.length && displayEmails.length > 0}
-                />
+              {/* Main Content Area */}
+              <div className="flex-1 flex">
+                {/* Email List */}
+                <div className="w-96 bg-white border-r border-gray-200 flex flex-col">
+                  {/* Bulk Actions */}
+                  <EmailBulkActions
+                    selectedCount={selectedEmails.size}
+                    totalCount={displayEmails.length}
+                    onSelectAll={handleSelectAll}
+                    onDeselectAll={handleDeselectAll}
+                    onMarkAsRead={handleBulkMarkAsRead}
+                    onMarkAsUnread={handleBulkMarkAsUnread}
+                    onArchive={() => {}}
+                    onDelete={handleBulkDelete}
+                    onAddLabel={handleAddLabel}
+                    onStar={() => {}}
+                    availableLabels={labels.map(l => l.name)}
+                    isAllSelected={selectedEmails.size === displayEmails.length && displayEmails.length > 0}
+                  />
 
-                <div className="flex flex-1 min-h-0">
-                  {/* Email List - Fixed width */}
-                  <div className="w-96 bg-white border-r border-slate-200 shadow-sm flex flex-col">
-                    {isLoading ? (
-                      <div className="flex flex-col items-center justify-center h-full p-6">
-                        <div className="w-10 h-10 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mb-4"></div>
-                        <p className="text-slate-700 font-medium">Loading emails...</p>
-                        {isGeminiConnected && (
-                          <p className="text-sm text-purple-600 mt-2">✨ Analyzing with Gemini AI</p>
-                        )}
+                  {/* Email List Content */}
+                  {isLoading ? (
+                    <div className="flex flex-col items-center justify-center h-full p-8">
+                      <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-6"></div>
+                      <h3 className="text-lg font-medium text-gray-900 mb-2">Loading your emails</h3>
+                      {isGeminiConnected && (
+                        <p className="text-sm text-blue-600 flex items-center space-x-2">
+                          <span>✨</span>
+                          <span>Analyzing with Gemini AI</span>
+                        </p>
+                      )}
+                    </div>
+                  ) : error ? (
+                    <div className="flex flex-col items-center justify-center h-full p-8">
+                      <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-6">
+                        <AlertCircle className="w-8 h-8 text-red-500" />
                       </div>
-                    ) : error ? (
-                      <div className="flex flex-col items-center justify-center h-full p-6">
-                        <AlertCircle className="w-12 h-12 text-red-500 mb-4" />
-                        <p className="text-slate-800 font-medium mb-2">Error loading emails</p>
-                        <p className="text-slate-600 mb-4 text-center text-sm">{error}</p>
-                        <button 
-                          onClick={() => refetch()} 
-                          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-md"
-                        >
-                          Try Again
-                        </button>
-                      </div>
-                    ) : (
-                      <EmailList 
-                        emails={displayEmails} 
-                        onEmailSelect={handleEmailSelect}
-                        selectedEmail={selectedEmail}
-                        selectedEmails={selectedEmails}
-                        onSelectEmail={handleSelectEmail}
-                      />
-                    )}
-                  </div>
-
-                  {/* Email Detail - Flexible */}
-                  <div className="flex-1 bg-white">
-                    {selectedEmail ? (
-                      <EmailDetail 
-                        email={selectedEmail} 
-                        onReply={() => handleReplyClick(selectedEmail)}
-                      />
-                    ) : (
-                      <div className="h-full flex items-center justify-center">
-                        <div className="text-center text-slate-500">
-                          <div className="w-16 h-16 bg-gradient-to-r from-blue-100 to-purple-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                            <Mail className="w-8 h-8 text-blue-600" />
-                          </div>
-                          <h3 className="text-xl font-semibold mb-3 text-slate-800">Select an email</h3>
-                          <p className="text-sm text-slate-600">Choose an email from the list to view details and AI insights</p>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Task Panel - Fixed width */}
-                  <div className="w-80 bg-white border-l border-slate-200 shadow-sm">
-                    <TaskPanel 
-                      tasks={tasks}
-                      emails={emails}
-                      onTaskComplete={handleTaskComplete}
-                      onTaskDelete={handleTaskDelete}
-                      onTaskPriorityChange={handleTaskPriorityChange}
+                      <h3 className="text-lg font-medium text-gray-900 mb-2">Error loading emails</h3>
+                      <p className="text-gray-600 mb-6 text-center text-sm">{error}</p>
+                      <button 
+                        onClick={() => refetch()} 
+                        className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-md font-medium"
+                      >
+                        Try Again
+                      </button>
+                    </div>
+                  ) : (
+                    <EmailList 
+                      emails={displayEmails} 
                       onEmailSelect={handleEmailSelect}
-                      onTaskDateChange={handleTaskDateChange}
+                      selectedEmail={selectedEmail}
+                      selectedEmails={selectedEmails}
+                      onSelectEmail={handleSelectEmail}
                     />
-                  </div>
+                  )}
+                </div>
+
+                {/* Email Detail */}
+                <div className="flex-1 bg-white">
+                  {selectedEmail ? (
+                    <EmailDetail 
+                      email={selectedEmail} 
+                      onReply={() => handleReplyClick(selectedEmail)}
+                    />
+                  ) : (
+                    <div className="h-full flex items-center justify-center">
+                      <div className="text-center max-w-md">
+                        <div className="w-20 h-20 bg-gradient-to-r from-blue-100 to-purple-100 rounded-2xl flex items-center justify-center mx-auto mb-8">
+                          <Mail className="w-10 h-10 text-blue-600" />
+                        </div>
+                        <h3 className="text-2xl font-semibold mb-4 text-gray-900">Select an email</h3>
+                        <p className="text-gray-600 leading-relaxed">
+                          Choose an email from your inbox to view AI-powered insights, 
+                          smart replies, and intelligent task extraction.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Task Panel */}
+                <div className="w-80 bg-white border-l border-gray-200">
+                  <TaskPanel 
+                    tasks={tasks}
+                    emails={emails}
+                    onTaskComplete={handleTaskComplete}
+                    onTaskDelete={handleTaskDelete}
+                    onTaskPriorityChange={handleTaskPriorityChange}
+                    onEmailSelect={handleEmailSelect}
+                    onTaskDateChange={handleTaskDateChange}
+                  />
                 </div>
               </div>
             </div>
           ) : (
-            <div className="h-[calc(100vh-140px)]">
+            <div className="h-[calc(100vh-170px)]">
               <CalendarView tasks={tasks} />
             </div>
           )}
@@ -657,26 +687,27 @@ const Index = () => {
           />
         </>
       ) : (
-        <div className="h-[calc(100vh-88px)] flex flex-col items-center justify-center p-8">
-          <div className="w-24 h-24 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center mb-8 shadow-2xl">
-            <Mail className="w-12 h-12 text-white" />
+        <div className="h-[calc(100vh-120px)] flex flex-col items-center justify-center p-8">
+          <div className="w-32 h-32 bg-gradient-to-r from-blue-600 to-purple-600 rounded-3xl flex items-center justify-center mb-12 shadow-2xl">
+            <Mail className="w-16 h-16 text-white" />
           </div>
           
-          <h2 className="text-3xl font-bold text-slate-800 mb-4 text-center">
-            Connect to Gmail to get started
+          <h2 className="text-4xl font-bold text-gray-900 mb-6 text-center">
+            The Future of Email
           </h2>
           
-          <p className="text-slate-600 max-w-lg text-center mb-8 leading-relaxed">
-            Saha uses advanced AI to analyze your emails, extract tasks, and provide intelligent insights. 
-            Connect your Gmail account to experience the future of email management.
+          <p className="text-gray-600 max-w-2xl text-center mb-12 text-lg leading-relaxed">
+            Experience AI-powered email intelligence that automatically categorizes, 
+            extracts tasks, schedules meetings, and provides smart insights. 
+            Connect your Gmail to get started.
           </p>
           
           <Link
             to="/settings"
-            className="flex items-center space-x-3 px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl"
+            className="flex items-center space-x-3 px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl text-lg font-medium"
           >
-            <Mail className="w-5 h-5" />
-            <span className="font-medium">Connect Gmail Account</span>
+            <Mail className="w-6 h-6" />
+            <span>Connect Gmail Account</span>
           </Link>
         </div>
       )}

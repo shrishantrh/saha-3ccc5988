@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Mail, Circle, AlertCircle, Clock, CheckSquare, Calendar, Zap, Frown, Meh, Smile } from 'lucide-react';
+import { Mail, Circle, AlertCircle, Clock, CheckSquare, Calendar, Zap, Frown, Meh, Smile, Tag } from 'lucide-react';
 import { Email } from '../types';
 
 interface EmailListProps {
@@ -12,18 +12,18 @@ interface EmailListProps {
 }
 
 const categoryColors = {
-  'Academic': 'bg-blue-100 text-blue-700 border-blue-200',
-  'Admissions': 'bg-purple-100 text-purple-700 border-purple-200',
-  'Events': 'bg-green-100 text-green-700 border-green-200',
-  'Personal': 'bg-orange-100 text-orange-700 border-orange-200',
-  'Work': 'bg-red-100 text-red-700 border-red-200',
-  'Finance': 'bg-emerald-100 text-emerald-700 border-emerald-200',
-  'Travel': 'bg-cyan-100 text-cyan-700 border-cyan-200',
-  'Shopping': 'bg-pink-100 text-pink-700 border-pink-200',
-  'Social': 'bg-violet-100 text-violet-700 border-violet-200',
-  'Health': 'bg-rose-100 text-rose-700 border-rose-200',
-  'Legal': 'bg-slate-100 text-slate-700 border-slate-200',
-  'Technology': 'bg-indigo-100 text-indigo-700 border-indigo-200'
+  'Academic': 'bg-blue-50 text-blue-700 border-blue-200',
+  'Admissions': 'bg-purple-50 text-purple-700 border-purple-200',
+  'Events': 'bg-green-50 text-green-700 border-green-200',
+  'Personal': 'bg-orange-50 text-orange-700 border-orange-200',
+  'Work': 'bg-red-50 text-red-700 border-red-200',
+  'Finance': 'bg-emerald-50 text-emerald-700 border-emerald-200',
+  'Travel': 'bg-cyan-50 text-cyan-700 border-cyan-200',
+  'Shopping': 'bg-pink-50 text-pink-700 border-pink-200',
+  'Social': 'bg-violet-50 text-violet-700 border-violet-200',
+  'Health': 'bg-rose-50 text-rose-700 border-rose-200',
+  'Legal': 'bg-gray-50 text-gray-700 border-gray-200',
+  'Technology': 'bg-indigo-50 text-indigo-700 border-indigo-200'
 };
 
 const priorityColors = {
@@ -76,14 +76,16 @@ const EmailList: React.FC<EmailListProps> = ({
 
   return (
     <div className="h-full flex flex-col bg-white">
-      <div className="p-4 border-b border-slate-200">
-        <h2 className="text-lg font-semibold text-slate-800 mb-2 flex items-center">
+      <div className="p-4 border-b border-gray-200 bg-gray-50">
+        <h2 className="text-lg font-semibold text-gray-900 mb-2 flex items-center">
           <Mail className="w-5 h-5 mr-2 text-blue-600" />
           Inbox
         </h2>
-        <div className="flex items-center justify-between text-sm text-slate-600">
-          <span>{emails.filter(e => !e.read).length} unread</span>
-          <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded-full">
+        <div className="flex items-center justify-between text-sm">
+          <span className="text-gray-600">
+            <span className="font-semibold text-blue-600">{emails.filter(e => !e.read).length}</span> unread
+          </span>
+          <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full font-medium">
             {emails.length} total
           </span>
         </div>
@@ -102,19 +104,19 @@ const EmailList: React.FC<EmailListProps> = ({
             <div
               key={email.id}
               onClick={(e) => handleEmailClick(email, e)}
-              className={`p-4 border-b border-slate-100 cursor-pointer transition-colors hover:bg-slate-50 ${
-                selectedEmail?.id === email.id ? 'bg-blue-50 border-l-4 border-l-blue-500' : ''
-              } ${isSelected ? 'bg-blue-25' : ''} ${!email.read ? 'bg-white font-medium' : 'bg-slate-25'}`}
+              className={`p-4 border-b border-gray-100 cursor-pointer transition-all duration-200 hover:bg-blue-50 ${
+                selectedEmail?.id === email.id ? 'bg-blue-50 border-l-4 border-l-blue-500 shadow-sm' : ''
+              } ${isSelected ? 'bg-blue-25' : ''} ${!email.read ? 'bg-white' : 'bg-gray-25'}`}
             >
               {/* Header Row */}
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center space-x-2 flex-1 min-w-0">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center space-x-3 flex-1 min-w-0">
                   {onSelectEmail && (
                     <input
                       type="checkbox"
                       checked={isSelected}
                       onChange={(e) => handleCheckboxChange(email.id, e)}
-                      className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 flex-shrink-0"
+                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 focus:ring-2 w-4 h-4"
                       onClick={(e) => e.stopPropagation()}
                     />
                   )}
@@ -128,7 +130,7 @@ const EmailList: React.FC<EmailListProps> = ({
                       </span>
                     </div>
                   )}
-                  <span className="font-medium text-slate-800 truncate text-sm">
+                  <span className={`font-medium text-gray-900 truncate text-sm ${!email.read ? 'font-semibold' : ''}`}>
                     {email.sender}
                   </span>
                   {SentimentIcon && (
@@ -137,12 +139,12 @@ const EmailList: React.FC<EmailListProps> = ({
                 </div>
                 <div className="flex items-center space-x-2 flex-shrink-0">
                   {taskCount > 0 && (
-                    <div className="flex items-center space-x-1 bg-blue-100 text-blue-700 px-2 py-1 rounded-full">
+                    <div className="flex items-center space-x-1 bg-blue-100 text-blue-700 px-2 py-1 rounded-full border border-blue-200">
                       <CheckSquare className="w-3 h-3" />
                       <span className="text-xs font-medium">{taskCount}</span>
                     </div>
                   )}
-                  <span className="text-xs text-slate-500 whitespace-nowrap">
+                  <span className="text-xs text-gray-500 whitespace-nowrap">
                     {email.timestamp}
                   </span>
                 </div>
@@ -150,51 +152,54 @@ const EmailList: React.FC<EmailListProps> = ({
               
               {/* Subject and Snippet */}
               <div className="mb-3">
-                <h3 className={`text-sm mb-1 line-clamp-1 ${!email.read ? 'font-semibold' : 'font-medium'} text-slate-900`}>
+                <h3 className={`text-sm mb-2 line-clamp-1 ${!email.read ? 'font-semibold' : 'font-medium'} text-gray-900`}>
                   {email.subject}
                 </h3>
-                <p className="text-sm text-slate-600 line-clamp-2 leading-relaxed">
+                <p className="text-sm text-gray-600 line-clamp-2 leading-relaxed">
                   {email.snippet}
                 </p>
               </div>
 
-              {/* Labels and Category */}
+              {/* AI-Generated Labels and Category */}
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center space-x-2 flex-wrap gap-1">
-                  <span className={`inline-block px-2 py-1 rounded-md text-xs font-medium border ${
-                    categoryColors[email.category as keyof typeof categoryColors] || 'bg-gray-100 text-gray-700 border-gray-200'
+                  <span className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-medium border ${
+                    categoryColors[email.category as keyof typeof categoryColors] || 'bg-gray-50 text-gray-700 border-gray-200'
                   }`}>
+                    <Tag className="w-3 h-3 mr-1" />
                     {email.category}
                   </span>
                   
+                  {/* AI-Generated Labels from email analysis */}
                   {(email as any).labels?.slice(0, 2).map((label: string) => (
-                    <span key={label} className="inline-block px-2 py-1 rounded-md text-xs font-medium bg-purple-100 text-purple-700 border border-purple-200">
-                      {label}
+                    <span key={label} className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-purple-50 text-purple-700 border border-purple-200">
+                      ✨ {label}
                     </span>
                   ))}
                   
                   {(email.aiAnalysis as any)?.actionRequired && (
-                    <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-amber-100 text-amber-700 border border-amber-200">
+                    <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200">
                       <Calendar className="w-3 h-3 mr-1" />
-                      Action
+                      Action Required
                     </span>
                   )}
                 </div>
                 
-                <div className="text-xs text-purple-600 font-medium flex-shrink-0">
-                  ✨ AI
+                <div className="text-xs text-purple-600 font-medium flex items-center space-x-1">
+                  <span>✨</span>
+                  <span>AI</span>
                 </div>
               </div>
               
-              {/* AI Summary */}
-              <div className="p-3 bg-gradient-to-r from-slate-50 to-blue-50 rounded-lg border border-slate-200">
-                <p className="text-sm text-slate-700 leading-relaxed line-clamp-2">
+              {/* Enhanced AI Summary */}
+              <div className="p-3 bg-gradient-to-r from-blue-50 via-purple-50 to-blue-50 rounded-lg border border-blue-200">
+                <p className="text-sm text-gray-700 leading-relaxed line-clamp-2">
                   {email.summary}
                 </p>
                 {(email.aiAnalysis as any)?.estimatedResponseTime && (
-                  <div className="mt-2 flex items-center text-xs text-slate-600">
+                  <div className="mt-2 flex items-center text-xs text-gray-600">
                     <Clock className="w-3 h-3 mr-1" />
-                    Response: {(email.aiAnalysis as any).estimatedResponseTime}
+                    <span>Response: {(email.aiAnalysis as any).estimatedResponseTime}</span>
                   </div>
                 )}
               </div>

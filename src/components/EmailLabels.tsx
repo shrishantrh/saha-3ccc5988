@@ -70,70 +70,88 @@ const EmailLabels: React.FC<EmailLabelsProps> = ({
   };
 
   return (
-    <div className="bg-white border-r border-slate-200 h-full flex flex-col">
-      {/* Header */}
-      <div className="p-3 border-b border-slate-200 bg-slate-50">
+    <div className="bg-white h-full flex flex-col">
+      {/* Modern Header */}
+      <div className="p-4 border-b border-gray-200 bg-gray-50">
         <div className="flex items-center justify-between">
-          <h3 className="font-semibold text-slate-800 flex items-center text-sm">
-            <Tag className="w-4 h-4 mr-2" />
-            Labels
-          </h3>
+          <div className="flex items-center space-x-2">
+            <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-blue-500 rounded-lg flex items-center justify-center">
+              <Tag className="w-4 h-4 text-white" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-gray-900 text-sm">Smart Labels</h3>
+              <p className="text-xs text-gray-500">AI-generated & custom</p>
+            </div>
+          </div>
           <Button
             variant="ghost"
             size="sm"
             onClick={() => setIsCreating(true)}
-            className="p-1 h-auto"
+            className="p-2 hover:bg-blue-100 text-blue-600"
+            title="Add Label"
           >
-            <Plus className="w-3 h-3" />
+            <Plus className="w-4 h-4" />
           </Button>
         </div>
       </div>
 
       {/* Labels List */}
-      <div className="flex-1 overflow-y-auto p-2">
+      <div className="flex-1 overflow-y-auto p-3 space-y-2">
         {/* All Emails */}
         <button
           onClick={() => onFilterByLabel('')}
-          className={`w-full flex items-center justify-between p-2 rounded-md text-left hover:bg-slate-100 transition-colors text-sm ${
-            !selectedLabel ? 'bg-blue-100 text-blue-700' : ''
+          className={`w-full flex items-center justify-between p-3 rounded-lg text-left hover:bg-gray-100 transition-colors text-sm group ${
+            !selectedLabel ? 'bg-blue-100 text-blue-700 border border-blue-200' : 'bg-white border border-gray-200'
           }`}
         >
-          <span className="font-medium">All Emails</span>
-          <span className="text-xs text-slate-500">
+          <div className="flex items-center space-x-3">
+            <div className="w-3 h-3 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full"></div>
+            <span className="font-medium">All Emails</span>
+          </div>
+          <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
             {labels.reduce((sum, label) => sum + label.count, 0)}
           </span>
         </button>
 
-        {/* Custom Labels */}
-        <div className="mt-2 space-y-1">
+        {/* AI-Generated Labels Section */}
+        <div className="pt-2">
+          <div className="flex items-center space-x-2 mb-2 px-2">
+            <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">AI Generated</span>
+            <div className="h-px bg-gray-200 flex-1"></div>
+          </div>
+          
+          {/* Custom Labels */}
           {labels.map((label) => (
             <div key={label.id} className="group">
               {editingId === label.id ? (
-                <div className="p-2 space-y-2 border border-slate-200 rounded-md bg-slate-50">
+                <div className="p-3 space-y-3 border border-gray-300 rounded-lg bg-gray-50">
                   <Input
                     value={newLabelName}
                     onChange={(e) => setNewLabelName(e.target.value)}
                     placeholder="Label name"
-                    className="h-7 text-sm"
+                    className="h-8 text-sm"
                     autoFocus
                   />
-                  <div className="flex space-x-1">
-                    {LABEL_COLORS.map((color) => (
-                      <button
-                        key={color}
-                        onClick={() => setNewLabelColor(color)}
-                        className={`w-3 h-3 rounded-full border ${
-                          newLabelColor === color ? 'border-slate-400' : 'border-transparent'
-                        }`}
-                        style={{ backgroundColor: color }}
-                      />
-                    ))}
+                  <div className="flex items-center space-x-2">
+                    <Palette className="w-3 h-3 text-gray-500" />
+                    <div className="flex space-x-1">
+                      {LABEL_COLORS.map((color) => (
+                        <button
+                          key={color}
+                          onClick={() => setNewLabelColor(color)}
+                          className={`w-4 h-4 rounded-full border-2 transition-all ${
+                            newLabelColor === color ? 'border-gray-400 scale-110' : 'border-transparent'
+                          }`}
+                          style={{ backgroundColor: color }}
+                        />
+                      ))}
+                    </div>
                   </div>
-                  <div className="flex space-x-1">
-                    <Button size="sm" onClick={handleSaveEdit} className="h-6 text-xs">
+                  <div className="flex space-x-2">
+                    <Button size="sm" onClick={handleSaveEdit} className="h-7 text-xs">
                       Save
                     </Button>
-                    <Button variant="ghost" size="sm" onClick={handleCancelEdit} className="h-6 text-xs">
+                    <Button variant="ghost" size="sm" onClick={handleCancelEdit} className="h-7 text-xs">
                       Cancel
                     </Button>
                   </div>
@@ -141,26 +159,27 @@ const EmailLabels: React.FC<EmailLabelsProps> = ({
               ) : (
                 <button
                   onClick={() => onFilterByLabel(label.name)}
-                  className={`w-full flex items-center justify-between p-2 rounded-md text-left hover:bg-slate-100 transition-colors group text-sm ${
-                    selectedLabel === label.name ? 'bg-blue-100 text-blue-700' : ''
+                  className={`w-full flex items-center justify-between p-3 rounded-lg text-left hover:bg-gray-100 transition-all duration-200 group text-sm ${
+                    selectedLabel === label.name ? 'bg-blue-100 text-blue-700 border border-blue-200' : 'bg-white border border-gray-200'
                   }`}
                 >
-                  <div className="flex items-center space-x-2 flex-1 min-w-0">
+                  <div className="flex items-center space-x-3 flex-1 min-w-0">
                     <div
-                      className="w-2.5 h-2.5 rounded-full"
+                      className="w-3 h-3 rounded-full"
                       style={{ backgroundColor: label.color }}
                     />
-                    <span className="truncate">{label.name}</span>
+                    <span className="truncate font-medium">{label.name}</span>
                   </div>
-                  <div className="flex items-center space-x-1">
-                    <span className="text-xs text-slate-500">{label.count}</span>
-                    <div className="opacity-0 group-hover:opacity-100 flex space-x-1">
+                  <div className="flex items-center space-x-2">
+                    <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">{label.count}</span>
+                    <div className="opacity-0 group-hover:opacity-100 flex space-x-1 transition-opacity">
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
                           handleEditLabel(label);
                         }}
-                        className="p-0.5 hover:bg-slate-200 rounded"
+                        className="p-1 hover:bg-blue-100 hover:text-blue-600 rounded"
+                        title="Edit label"
                       >
                         <Edit2 className="w-3 h-3" />
                       </button>
@@ -169,7 +188,8 @@ const EmailLabels: React.FC<EmailLabelsProps> = ({
                           e.stopPropagation();
                           onDeleteLabel(label.id);
                         }}
-                        className="p-0.5 hover:bg-red-100 hover:text-red-600 rounded"
+                        className="p-1 hover:bg-red-100 hover:text-red-600 rounded"
+                        title="Delete label"
                       >
                         <X className="w-3 h-3" />
                       </button>
@@ -183,34 +203,34 @@ const EmailLabels: React.FC<EmailLabelsProps> = ({
 
         {/* Create New Label */}
         {isCreating && (
-          <div className="mt-2 p-2 space-y-2 border border-slate-200 rounded-md bg-slate-50">
+          <div className="mt-3 p-3 space-y-3 border border-gray-300 rounded-lg bg-gray-50">
             <Input
               value={newLabelName}
               onChange={(e) => setNewLabelName(e.target.value)}
               placeholder="New label name"
-              className="h-7 text-sm"
+              className="h-8 text-sm"
               autoFocus
             />
             <div className="flex items-center space-x-2">
-              <Palette className="w-3 h-3 text-slate-500" />
+              <Palette className="w-3 h-3 text-gray-500" />
               <div className="flex space-x-1">
                 {LABEL_COLORS.map((color) => (
                   <button
                     key={color}
                     onClick={() => setNewLabelColor(color)}
-                    className={`w-3 h-3 rounded-full border ${
-                      newLabelColor === color ? 'border-slate-400' : 'border-transparent'
+                    className={`w-4 h-4 rounded-full border-2 transition-all ${
+                      newLabelColor === color ? 'border-gray-400 scale-110' : 'border-transparent'
                     }`}
                     style={{ backgroundColor: color }}
                   />
                 ))}
               </div>
             </div>
-            <div className="flex space-x-1">
-              <Button size="sm" onClick={handleCreateLabel} className="h-6 text-xs">
+            <div className="flex space-x-2">
+              <Button size="sm" onClick={handleCreateLabel} className="h-7 text-xs">
                 Create
               </Button>
-              <Button variant="ghost" size="sm" onClick={handleCancelEdit} className="h-6 text-xs">
+              <Button variant="ghost" size="sm" onClick={handleCancelEdit} className="h-7 text-xs">
                 Cancel
               </Button>
             </div>
