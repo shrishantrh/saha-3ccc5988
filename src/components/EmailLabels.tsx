@@ -3,7 +3,6 @@ import React, { useState } from 'react';
 import { Tag, Plus, X, Edit2, Palette } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
-import { Badge } from './ui/badge';
 
 interface EmailLabel {
   id: string;
@@ -71,11 +70,11 @@ const EmailLabels: React.FC<EmailLabelsProps> = ({
   };
 
   return (
-    <div className="bg-white border-r border-slate-200 w-64 h-full flex flex-col">
+    <div className="bg-white border-r border-slate-200 h-full flex flex-col">
       {/* Header */}
-      <div className="p-4 border-b border-slate-200">
+      <div className="p-3 border-b border-slate-200 bg-slate-50">
         <div className="flex items-center justify-between">
-          <h3 className="font-semibold text-slate-800 flex items-center">
+          <h3 className="font-semibold text-slate-800 flex items-center text-sm">
             <Tag className="w-4 h-4 mr-2" />
             Labels
           </h3>
@@ -83,9 +82,9 @@ const EmailLabels: React.FC<EmailLabelsProps> = ({
             variant="ghost"
             size="sm"
             onClick={() => setIsCreating(true)}
-            className="p-1"
+            className="p-1 h-auto"
           >
-            <Plus className="w-4 h-4" />
+            <Plus className="w-3 h-3" />
           </Button>
         </div>
       </div>
@@ -95,11 +94,11 @@ const EmailLabels: React.FC<EmailLabelsProps> = ({
         {/* All Emails */}
         <button
           onClick={() => onFilterByLabel('')}
-          className={`w-full flex items-center justify-between p-2 rounded-lg text-left hover:bg-slate-100 transition-colors ${
+          className={`w-full flex items-center justify-between p-2 rounded-md text-left hover:bg-slate-100 transition-colors text-sm ${
             !selectedLabel ? 'bg-blue-100 text-blue-700' : ''
           }`}
         >
-          <span className="text-sm font-medium">All Emails</span>
+          <span className="font-medium">All Emails</span>
           <span className="text-xs text-slate-500">
             {labels.reduce((sum, label) => sum + label.count, 0)}
           </span>
@@ -110,27 +109,25 @@ const EmailLabels: React.FC<EmailLabelsProps> = ({
           {labels.map((label) => (
             <div key={label.id} className="group">
               {editingId === label.id ? (
-                <div className="p-2 space-y-2 border border-slate-200 rounded-lg bg-slate-50">
+                <div className="p-2 space-y-2 border border-slate-200 rounded-md bg-slate-50">
                   <Input
                     value={newLabelName}
                     onChange={(e) => setNewLabelName(e.target.value)}
                     placeholder="Label name"
-                    className="h-8 text-sm"
+                    className="h-7 text-sm"
                     autoFocus
                   />
-                  <div className="flex items-center space-x-2">
-                    <div className="flex space-x-1">
-                      {LABEL_COLORS.map((color) => (
-                        <button
-                          key={color}
-                          onClick={() => setNewLabelColor(color)}
-                          className={`w-4 h-4 rounded-full border-2 ${
-                            newLabelColor === color ? 'border-slate-400' : 'border-transparent'
-                          }`}
-                          style={{ backgroundColor: color }}
-                        />
-                      ))}
-                    </div>
+                  <div className="flex space-x-1">
+                    {LABEL_COLORS.map((color) => (
+                      <button
+                        key={color}
+                        onClick={() => setNewLabelColor(color)}
+                        className={`w-3 h-3 rounded-full border ${
+                          newLabelColor === color ? 'border-slate-400' : 'border-transparent'
+                        }`}
+                        style={{ backgroundColor: color }}
+                      />
+                    ))}
                   </div>
                   <div className="flex space-x-1">
                     <Button size="sm" onClick={handleSaveEdit} className="h-6 text-xs">
@@ -144,16 +141,16 @@ const EmailLabels: React.FC<EmailLabelsProps> = ({
               ) : (
                 <button
                   onClick={() => onFilterByLabel(label.name)}
-                  className={`w-full flex items-center justify-between p-2 rounded-lg text-left hover:bg-slate-100 transition-colors group ${
+                  className={`w-full flex items-center justify-between p-2 rounded-md text-left hover:bg-slate-100 transition-colors group text-sm ${
                     selectedLabel === label.name ? 'bg-blue-100 text-blue-700' : ''
                   }`}
                 >
-                  <div className="flex items-center space-x-2 flex-1">
+                  <div className="flex items-center space-x-2 flex-1 min-w-0">
                     <div
-                      className="w-3 h-3 rounded-full"
+                      className="w-2.5 h-2.5 rounded-full"
                       style={{ backgroundColor: label.color }}
                     />
-                    <span className="text-sm truncate">{label.name}</span>
+                    <span className="truncate">{label.name}</span>
                   </div>
                   <div className="flex items-center space-x-1">
                     <span className="text-xs text-slate-500">{label.count}</span>
@@ -163,7 +160,7 @@ const EmailLabels: React.FC<EmailLabelsProps> = ({
                           e.stopPropagation();
                           handleEditLabel(label);
                         }}
-                        className="p-1 hover:bg-slate-200 rounded"
+                        className="p-0.5 hover:bg-slate-200 rounded"
                       >
                         <Edit2 className="w-3 h-3" />
                       </button>
@@ -172,7 +169,7 @@ const EmailLabels: React.FC<EmailLabelsProps> = ({
                           e.stopPropagation();
                           onDeleteLabel(label.id);
                         }}
-                        className="p-1 hover:bg-red-100 hover:text-red-600 rounded"
+                        className="p-0.5 hover:bg-red-100 hover:text-red-600 rounded"
                       >
                         <X className="w-3 h-3" />
                       </button>
@@ -186,22 +183,22 @@ const EmailLabels: React.FC<EmailLabelsProps> = ({
 
         {/* Create New Label */}
         {isCreating && (
-          <div className="mt-2 p-2 space-y-2 border border-slate-200 rounded-lg bg-slate-50">
+          <div className="mt-2 p-2 space-y-2 border border-slate-200 rounded-md bg-slate-50">
             <Input
               value={newLabelName}
               onChange={(e) => setNewLabelName(e.target.value)}
               placeholder="New label name"
-              className="h-8 text-sm"
+              className="h-7 text-sm"
               autoFocus
             />
             <div className="flex items-center space-x-2">
-              <Palette className="w-4 h-4 text-slate-500" />
+              <Palette className="w-3 h-3 text-slate-500" />
               <div className="flex space-x-1">
                 {LABEL_COLORS.map((color) => (
                   <button
                     key={color}
                     onClick={() => setNewLabelColor(color)}
-                    className={`w-4 h-4 rounded-full border-2 ${
+                    className={`w-3 h-3 rounded-full border ${
                       newLabelColor === color ? 'border-slate-400' : 'border-transparent'
                     }`}
                     style={{ backgroundColor: color }}

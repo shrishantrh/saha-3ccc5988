@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Check, Archive, Trash2, Mail, MailOpen, Tag, Star } from 'lucide-react';
+import { Check, Trash2, Mail, MailOpen, Tag } from 'lucide-react';
 import { Button } from './ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 
@@ -26,10 +26,8 @@ const EmailBulkActions: React.FC<EmailBulkActionsProps> = ({
   onDeselectAll,
   onMarkAsRead,
   onMarkAsUnread,
-  onArchive,
   onDelete,
   onAddLabel,
-  onStar,
   availableLabels,
   isAllSelected
 }) => {
@@ -77,13 +75,8 @@ const EmailBulkActions: React.FC<EmailBulkActionsProps> = ({
           <Mail className="w-4 h-4" />
         </Button>
 
-        {/* Star */}
-        <Button variant="ghost" size="sm" onClick={onStar} title="Add star">
-          <Star className="w-4 h-4" />
-        </Button>
-
         {/* Add Label */}
-        <Select onValueChange={onAddLabel}>
+        <Select onValueChange={(value) => value && onAddLabel(value)}>
           <SelectTrigger className="w-auto border-none shadow-none p-2 h-auto">
             <Tag className="w-4 h-4" />
           </SelectTrigger>
@@ -98,11 +91,6 @@ const EmailBulkActions: React.FC<EmailBulkActionsProps> = ({
         </Select>
 
         <div className="w-px h-6 bg-slate-300 mx-2" />
-
-        {/* Archive */}
-        <Button variant="ghost" size="sm" onClick={onArchive} title="Archive">
-          <Archive className="w-4 h-4" />
-        </Button>
 
         {/* Delete */}
         <Button 

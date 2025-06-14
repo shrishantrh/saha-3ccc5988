@@ -30,7 +30,8 @@ const mockEmails: Email[] = [
     summary: 'Stanford confirms application received, reminds about document deadline',
     timestamp: '2 hours ago',
     priority: 'high',
-    read: false
+    read: false,
+    labels: ['Important', 'Deadline']
   },
   {
     id: '2',
@@ -42,7 +43,8 @@ const mockEmails: Email[] = [
     summary: 'Professor proposing ML healthcare research collaboration, requesting meeting',
     timestamp: '5 hours ago',
     priority: 'medium',
-    read: true
+    read: true,
+    labels: ['Work', 'Research']
   },
   {
     id: '3',
@@ -54,7 +56,8 @@ const mockEmails: Email[] = [
     summary: 'AI conference early bird registration ending soon (3 days)',
     timestamp: '1 day ago',
     priority: 'low',
-    read: true
+    read: true,
+    labels: ['Events', 'Personal']
   }
 ];
 
@@ -106,12 +109,15 @@ const Index = () => {
   const [selectedEmails, setSelectedEmails] = useState<Set<string>>(new Set());
   const [filteredEmails, setFilteredEmails] = useState<Email[]>([]);
   const [labels, setLabels] = useState([
-    { id: '1', name: 'Important', color: '#ef4444', count: 5 },
-    { id: '2', name: 'Work', color: '#3b82f6', count: 12 },
-    { id: '3', name: 'Personal', color: '#22c55e', count: 8 },
-    { id: '4', name: 'Follow-up', color: '#eab308', count: 3 }
+    { id: '1', name: 'Important', color: '#ef4444', count: 2 },
+    { id: '2', name: 'Work', color: '#3b82f6', count: 1 },
+    { id: '3', name: 'Personal', color: '#22c55e', count: 1 },
+    { id: '4', name: 'Research', color: '#8b5cf6', count: 1 },
+    { id: '5', name: 'Events', color: '#eab308', count: 1 },
+    { id: '6', name: 'Deadline', color: '#dc2626', count: 1 }
   ]);
   const [selectedLabel, setSelectedLabel] = useState<string>('');
+  const [isLabelsVisible, setIsLabelsVisible] = useState(true);
 
   // Update emails and tasks when Gmail emails change OR when Gemini connection changes
   useEffect(() => {
@@ -119,7 +125,12 @@ const Index = () => {
     
     if (isAuthenticated && gmailEmails.length > 0) {
       console.log('Updating emails with Gmail data');
-      setEmails(gmailEmails);
+      // Add mock labels to Gmail emails for demonstration
+      const emailsWithLabels = gmailEmails.map(email => ({
+        ...email,
+        labels: generateAILabels(email)
+      }));
+      setEmails(emailsWithLabels);
       setSelectedEmail(null);
       
       if (isGeminiConnected && aiTasks.length > 0) {
@@ -128,6 +139,27 @@ const Index = () => {
       }
     }
   }, [isAuthenticated, gmailEmails, aiTasks, isGeminiConnected]);
+
+  // AI label generation function
+  const generateAILabels = (email: Email): string[] => {
+    const labels = [];
+    
+    // Priority-based labels
+    if (email.priority === 'high') labels.push('Important');
+    
+    // Category-based labels
+    if (email.category === 'Academic' || email.category === 'Work') labels.push('Work');
+    if (email.category === 'Personal') labels.push('Personal');
+    if (email.category === 'Events') labels.push('Events');
+    
+    // Content-based labels
+    const content = (email.subject + ' ' + email.snippet).toLowerCase();
+    if (content.includes('deadline') || content.includes('urgent')) labels.push('Deadline');
+    if (content.includes('research') || content.includes('collaboration')) labels.push('Research');
+    if (content.includes('meeting') || content.includes('appointment')) labels.push('Meeting');
+    
+    return [...new Set(labels)]; // Remove duplicates
+  };
 
   // Trigger refetch when Gemini service becomes available
   useEffect(() => {
@@ -211,7 +243,8 @@ const Index = () => {
   };
 
   const handleClearSearch = () => {
-    setFilteredEmails(emails);
+    setFilteredEmails([]);
+    setSelectedLabel('');
   };
 
   // Bulk Actions
@@ -254,10 +287,13 @@ const Index = () => {
 
   const handleBulkDelete = () => {
     setEmails(prev => prev.filter(email => !selectedEmails.has(email.id)));
+    setTasks(prev => prev.filter(task => !selectedEmails.has(task.emailId)));
     setSelectedEmails(new Set());
   };
 
   const handleAddLabel = (labelName: string) => {
+    if (!labelName) return;
+    
     setEmails(prev => prev.map(email => {
       if (selectedEmails.has(email.id)) {
         const emailLabels = (email as any).labels || [];
@@ -267,10 +303,20 @@ const Index = () => {
       }
       return email;
     }));
+    
+    // Update label counts
+    updateLabelCounts();
     setSelectedEmails(new Set());
   };
 
   // Label Management
+  const updateLabelCounts = () => {
+    setLabels(prev => prev.map(label => ({
+      ...label,
+      count: emails.filter(email => (email as any).labels?.includes(label.name)).length
+    })));
+  };
+
   const handleCreateLabel = (name: string, color: string) => {
     const newLabel = {
       id: Date.now().toString(),
@@ -282,13 +328,39 @@ const Index = () => {
   };
 
   const handleDeleteLabel = (labelId: string) => {
-    setLabels(prev => prev.filter(label => label.id !== labelId));
+    const labelToDelete = labels.find(l => l.id === labelId);
+    if (labelToDelete) {
+      // Remove label from all emails
+      setEmails(prev => prev.map(email => ({
+        ...email,
+        labels: (email as any).labels?.filter((l: string) => l !== labelToDelete.name) || []
+      })));
+      setLabels(prev => prev.filter(label => label.id !== labelId));
+      if (selectedLabel === labelToDelete.name) {
+        setSelectedLabel('');
+      }
+    }
   };
 
   const handleEditLabel = (labelId: string, name: string, color: string) => {
-    setLabels(prev => prev.map(label => 
-      label.id === labelId ? { ...label, name, color } : label
-    ));
+    const oldLabel = labels.find(l => l.id === labelId);
+    if (oldLabel) {
+      // Update label in all emails
+      setEmails(prev => prev.map(email => ({
+        ...email,
+        labels: (email as any).labels?.map((l: string) => l === oldLabel.name ? name : l) || []
+      })));
+      setLabels(prev => prev.map(label => 
+        label.id === labelId ? { ...label, name, color } : label
+      ));
+      if (selectedLabel === oldLabel.name) {
+        setSelectedLabel(name);
+      }
+    }
+  };
+
+  const handleFilterByLabel = (labelName: string) => {
+    setSelectedLabel(labelName);
   };
 
   // Task handlers
@@ -337,36 +409,36 @@ const Index = () => {
   };
 
   const categories = [...new Set(emails.map(email => email.category))];
-  const displayEmails = filteredEmails.length > 0 ? filteredEmails : emails;
+  const displayEmails = filteredEmails.length > 0 || selectedLabel ? filteredEmails : emails;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50">
       {/* Header */}
-      <header className="bg-white/90 backdrop-blur-md border-b border-slate-200 px-6 py-4 shadow-sm">
+      <header className="bg-white/90 backdrop-blur-md border-b border-slate-200 px-6 py-3 shadow-sm">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
-            <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
-              <Mail className="w-6 h-6 text-white" />
+            <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center shadow-lg">
+              <Mail className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                 Saha
               </h1>
-              <span className="text-sm text-slate-500 font-medium">
+              <span className="text-xs text-slate-500 font-medium">
                 AI-Powered Email Intelligence
               </span>
             </div>
           </div>
-          <div className="flex items-center space-x-6 text-sm">
-            <div className="flex items-center space-x-2 px-3 py-1 bg-green-100 text-green-700 rounded-full">
-              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-              <span className="font-medium">Gmail Connected</span>
+          <div className="flex items-center space-x-4 text-sm">
+            <div className="flex items-center space-x-2 px-2 py-1 bg-green-100 text-green-700 rounded-full">
+              <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
+              <span className="font-medium text-xs">Gmail Connected</span>
             </div>
 
             <div className="flex items-center space-x-2">
               <button
                 onClick={handleCompose}
-                className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200 shadow-md"
+                className="flex items-center space-x-2 px-3 py-1.5 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200 shadow-md text-sm"
               >
                 <Edit className="w-4 h-4" />
                 <span>Compose</span>
@@ -378,7 +450,7 @@ const Index = () => {
                   className="p-2 text-slate-500 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-all duration-200"
                   title="AI Chat Assistant"
                 >
-                  <MessageCircle className="w-5 h-5" />
+                  <MessageCircle className="w-4 h-4" />
                 </button>
               )}
 
@@ -387,7 +459,7 @@ const Index = () => {
                 className="p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-all duration-200"
                 title="Settings"
               >
-                <SettingsIcon className="w-5 h-5" />
+                <SettingsIcon className="w-4 h-4" />
               </Link>
             </div>
           </div>
@@ -397,47 +469,60 @@ const Index = () => {
       {isAuthenticated ? (
         <>
           {/* View Toggle */}
-          <div className="bg-white/70 backdrop-blur-sm border-b border-slate-200 px-6 py-3">
-            <div className="flex items-center space-x-1 bg-slate-100 rounded-lg p-1 w-fit">
+          <div className="bg-white/70 backdrop-blur-sm border-b border-slate-200 px-6 py-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-1 bg-slate-100 rounded-lg p-1 w-fit">
+                <button
+                  onClick={() => setCurrentView('email')}
+                  className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200 ${
+                    currentView === 'email'
+                      ? 'bg-white text-blue-600 shadow-sm'
+                      : 'text-slate-600 hover:text-slate-800'
+                  }`}
+                >
+                  <Mail className="w-4 h-4 mr-2 inline" />
+                  Email View
+                </button>
+                <button
+                  onClick={() => setCurrentView('calendar')}
+                  className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200 ${
+                    currentView === 'calendar'
+                      ? 'bg-white text-purple-600 shadow-sm'
+                      : 'text-slate-600 hover:text-slate-800'
+                  }`}
+                >
+                  <Calendar className="w-4 h-4 mr-2 inline" />
+                  Calendar View
+                </button>
+              </div>
+              
               <button
-                onClick={() => setCurrentView('email')}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
-                  currentView === 'email'
-                    ? 'bg-white text-blue-600 shadow-sm'
-                    : 'text-slate-600 hover:text-slate-800'
-                }`}
+                onClick={() => setIsLabelsVisible(!isLabelsVisible)}
+                className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 rounded-lg text-sm font-medium text-slate-600 transition-colors"
               >
-                <Mail className="w-4 h-4 mr-2 inline" />
-                Email View
-              </button>
-              <button
-                onClick={() => setCurrentView('calendar')}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
-                  currentView === 'calendar'
-                    ? 'bg-white text-purple-600 shadow-sm'
-                    : 'text-slate-600 hover:text-slate-800'
-                }`}
-              >
-                <Calendar className="w-4 h-4 mr-2 inline" />
-                Calendar View
+                {isLabelsVisible ? 'Hide Labels' : 'Show Labels'}
               </button>
             </div>
           </div>
 
           {currentView === 'email' ? (
-            <div className="flex h-[calc(100vh-144px)]">
-              {/* Labels Panel */}
-              <EmailLabels
-                labels={labels}
-                onCreateLabel={handleCreateLabel}
-                onDeleteLabel={handleDeleteLabel}
-                onEditLabel={handleEditLabel}
-                onFilterByLabel={setSelectedLabel}
-                selectedLabel={selectedLabel}
-              />
+            <div className="flex h-[calc(100vh-120px)]">
+              {/* Labels Panel - Collapsible */}
+              {isLabelsVisible && (
+                <div className="w-56 border-r border-slate-200">
+                  <EmailLabels
+                    labels={labels}
+                    onCreateLabel={handleCreateLabel}
+                    onDeleteLabel={handleDeleteLabel}
+                    onEditLabel={handleEditLabel}
+                    onFilterByLabel={handleFilterByLabel}
+                    selectedLabel={selectedLabel}
+                  />
+                </div>
+              )}
 
-              {/* Email Panel */}
-              <div className="flex-1 flex flex-col">
+              {/* Main Content */}
+              <div className="flex-1 flex flex-col min-w-0">
                 {/* Search */}
                 <EmailSearch
                   onSearch={handleSearch}
@@ -454,17 +539,17 @@ const Index = () => {
                   onDeselectAll={handleDeselectAll}
                   onMarkAsRead={handleBulkMarkAsRead}
                   onMarkAsUnread={handleBulkMarkAsUnread}
-                  onArchive={handleBulkArchive}
+                  onArchive={() => {}} // Disabled
                   onDelete={handleBulkDelete}
                   onAddLabel={handleAddLabel}
-                  onStar={() => {}}
+                  onStar={() => {}} // Disabled
                   availableLabels={labels.map(l => l.name)}
                   isAllSelected={selectedEmails.size === displayEmails.length && displayEmails.length > 0}
                 />
 
-                <div className="flex flex-1">
-                  {/* Email List */}
-                  <div className="w-80 bg-white/70 backdrop-blur-sm border-r border-slate-200 shadow-sm">
+                <div className="flex flex-1 min-h-0">
+                  {/* Email List - Fixed width */}
+                  <div className="w-96 bg-white/70 backdrop-blur-sm border-r border-slate-200 shadow-sm flex flex-col">
                     {isLoading ? (
                       <div className="flex flex-col items-center justify-center h-full p-6">
                         <div className="w-10 h-10 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mb-4"></div>
@@ -496,8 +581,8 @@ const Index = () => {
                     )}
                   </div>
 
-                  {/* Email Detail */}
-                  <div className="flex-1 bg-white/50 backdrop-blur-sm max-w-3xl">
+                  {/* Email Detail - Flexible */}
+                  <div className="flex-1 bg-white/50 backdrop-blur-sm">
                     {selectedEmail ? (
                       <EmailDetail 
                         email={selectedEmail} 
@@ -515,24 +600,24 @@ const Index = () => {
                       </div>
                     )}
                   </div>
-                </div>
-              </div>
 
-              {/* Task Panel */}
-              <div className="w-80 bg-white/70 backdrop-blur-sm border-l border-slate-200 shadow-sm">
-                <TaskPanel 
-                  tasks={tasks}
-                  emails={emails}
-                  onTaskComplete={handleTaskComplete}
-                  onTaskDelete={handleTaskDelete}
-                  onTaskPriorityChange={handleTaskPriorityChange}
-                  onEmailSelect={handleEmailSelect}
-                  onTaskDateChange={handleTaskDateChange}
-                />
+                  {/* Task Panel - Fixed width */}
+                  <div className="w-80 bg-white/70 backdrop-blur-sm border-l border-slate-200 shadow-sm">
+                    <TaskPanel 
+                      tasks={tasks}
+                      emails={emails}
+                      onTaskComplete={handleTaskComplete}
+                      onTaskDelete={handleTaskDelete}
+                      onTaskPriorityChange={handleTaskPriorityChange}
+                      onEmailSelect={handleEmailSelect}
+                      onTaskDateChange={handleTaskDateChange}
+                    />
+                  </div>
+                </div>
               </div>
             </div>
           ) : (
-            <div className="h-[calc(100vh-144px)]">
+            <div className="h-[calc(100vh-120px)]">
               <CalendarView tasks={tasks} />
             </div>
           )}
