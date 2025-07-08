@@ -1,6 +1,5 @@
 
 import React from 'react';
-import CalendarView from './CalendarView';
 import EmailComposer from './EmailComposer';
 import ReplyInterface from './ReplyInterface';
 import EmailChat from './EmailChat';
@@ -8,7 +7,6 @@ import EmailMainContent from './EmailMainContent';
 import { Email, Task } from '../types';
 
 interface EmailInboxViewProps {
-  currentView: 'email' | 'calendar';
   isGeminiConnected: boolean;
   // Email Main Content props
   isLabelsVisible: boolean;
@@ -55,7 +53,6 @@ interface EmailInboxViewProps {
 }
 
 const EmailInboxView: React.FC<EmailInboxViewProps> = ({
-  currentView,
   isGeminiConnected,
   isLabelsVisible,
   labels,
@@ -100,46 +97,40 @@ const EmailInboxView: React.FC<EmailInboxViewProps> = ({
 }) => {
   return (
     <>
-      {currentView === 'email' ? (
-        <EmailMainContent
-          isLabelsVisible={isLabelsVisible}
-          labels={labels}
-          aiCategories={aiCategories}
-          onCreateLabel={onCreateLabel}
-          onDeleteLabel={onDeleteLabel}
-          onEditLabel={onEditLabel}
-          onFilterByLabel={onFilterByLabel}
-          selectedLabel={selectedLabel}
-          displayEmails={displayEmails}
-          selectedEmails={selectedEmails}
-          handleSelectAll={handleSelectAll}
-          handleDeselectAll={handleDeselectAll}
-          handleBulkMarkAsRead={handleBulkMarkAsRead}
-          handleBulkMarkAsUnread={handleBulkMarkAsUnread}
-          handleBulkArchive={handleBulkArchive}
-          handleBulkDelete={handleBulkDelete}
-          handleAddLabel={handleAddLabel}
-          isAllSelected={isAllSelected}
-          isLoading={isLoading}
-          error={error}
-          refetch={refetch}
-          isGeminiConnected={isGeminiConnected}
-          handleEmailSelect={handleEmailSelect}
-          selectedEmail={selectedEmail}
-          handleSelectEmail={handleSelectEmail}
-          handleReplyClick={handleReplyClick}
-          tasks={tasks}
-          emails={emails}
-          handleTaskComplete={handleTaskComplete}
-          handleTaskDelete={handleTaskDelete}
-          handleTaskPriorityChange={handleTaskPriorityChange}
-          handleTaskDateChange={handleTaskDateChange}
-        />
-      ) : (
-        <div className="h-[calc(100vh-120px)]">
-          <CalendarView tasks={tasks} />
-        </div>
-      )}
+      <EmailMainContent
+        isLabelsVisible={isLabelsVisible}
+        labels={labels}
+        aiCategories={aiCategories}
+        onCreateLabel={onCreateLabel}
+        onDeleteLabel={onDeleteLabel}
+        onEditLabel={onEditLabel}
+        onFilterByLabel={onFilterByLabel}
+        selectedLabel={selectedLabel}
+        displayEmails={displayEmails}
+        selectedEmails={selectedEmails}
+        handleSelectAll={handleSelectAll}
+        handleDeselectAll={handleDeselectAll}
+        handleBulkMarkAsRead={handleBulkMarkAsRead}
+        handleBulkMarkAsUnread={handleBulkMarkAsUnread}
+        handleBulkArchive={handleBulkArchive}
+        handleBulkDelete={handleBulkDelete}
+        handleAddLabel={handleAddLabel}
+        isAllSelected={isAllSelected}
+        isLoading={isLoading}
+        error={error}
+        refetch={refetch}
+        isGeminiConnected={isGeminiConnected}
+        handleEmailSelect={handleEmailSelect}
+        selectedEmail={selectedEmail}
+        handleSelectEmail={handleSelectEmail}
+        handleReplyClick={handleReplyClick}
+        tasks={tasks}
+        emails={emails}
+        handleTaskComplete={handleTaskComplete}
+        handleTaskDelete={handleTaskDelete}
+        handleTaskPriorityChange={handleTaskPriorityChange}
+        handleTaskDateChange={handleTaskDateChange}
+      />
 
       {/* Email Composer */}
       <EmailComposer

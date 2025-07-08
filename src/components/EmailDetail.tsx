@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Mail, Reply, Archive, Trash2, Star, MoreHorizontal, Zap, Clock, CheckCircle, AlertTriangle, Calendar } from 'lucide-react';
 import { Email } from '../types';
-import MeetingSchedulerComponent from './MeetingScheduler';
+
 
 interface EmailDetailProps {
   email: Email;
@@ -20,7 +20,6 @@ const EmailDetail: React.FC<EmailDetailProps> = ({
   onDelete 
 }) => {
   const [isExpanded, setIsExpanded] = useState(true);
-  const [showMeetingScheduler, setShowMeetingScheduler] = useState(false);
   const [isStarred, setIsStarred] = useState(false);
   
   const aiAnalysis = email.aiAnalysis as any;
@@ -65,13 +64,6 @@ const EmailDetail: React.FC<EmailDetailProps> = ({
     }
   };
 
-  // Check if email might contain meeting request
-  const containsMeetingKeywords = (text: string) => {
-    const keywords = ['meeting', 'schedule', 'appointment', 'call', 'conference', 'discuss', 'availability', 'time to meet'];
-    return keywords.some(keyword => text.toLowerCase().includes(keyword));
-  };
-
-  const showScheduleButton = containsMeetingKeywords(email.subject + ' ' + email.body);
 
   return (
     <div className="h-full flex flex-col max-w-4xl">
@@ -163,16 +155,6 @@ const EmailDetail: React.FC<EmailDetailProps> = ({
             <span>Reply</span>
           </button>
           
-          {showScheduleButton && (
-            <button 
-              onClick={() => setShowMeetingScheduler(true)}
-              className="flex items-center space-x-2 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-            >
-              <Calendar className="w-4 h-4" />
-              <span>Schedule</span>
-            </button>
-          )}
-          
           {actionRequired && (
             <button className="flex items-center space-x-2 px-3 py-2 bg-amber-100 text-amber-700 border border-amber-300 rounded-lg hover:bg-amber-200 transition-colors">
               <CheckCircle className="w-4 h-4" />
@@ -207,16 +189,6 @@ const EmailDetail: React.FC<EmailDetailProps> = ({
         </div>
       </div>
 
-      {/* Meeting Scheduler Modal */}
-      <MeetingSchedulerComponent
-        isOpen={showMeetingScheduler}
-        onClose={() => setShowMeetingScheduler(false)}
-        emailContext={{
-          subject: email.subject,
-          body: email.body,
-          sender: email.sender
-        }}
-      />
     </div>
   );
 };

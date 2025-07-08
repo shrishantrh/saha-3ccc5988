@@ -1,14 +1,13 @@
 
 import React from 'react';
-import { Mail, Search, Tag, Calendar, Edit, MessageCircle, Settings as SettingsIcon } from 'lucide-react';
+import { Mail, Search, Tag, Edit, MessageCircle, Settings as SettingsIcon } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import EmailSearch from './EmailSearch';
+import ThemeToggle from './ThemeToggle';
 
 interface EmailViewHeaderProps {
   isAuthenticated: boolean;
   isGeminiConnected: boolean;
-  currentView: 'email' | 'calendar';
-  setCurrentView: (view: 'email' | 'calendar') => void;
   showSearchBar: boolean;
   setShowSearchBar: (show: boolean) => void;
   isLabelsVisible: boolean;
@@ -24,8 +23,6 @@ interface EmailViewHeaderProps {
 const EmailViewHeader: React.FC<EmailViewHeaderProps> = ({
   isAuthenticated,
   isGeminiConnected,
-  currentView,
-  setCurrentView,
   showSearchBar,
   setShowSearchBar,
   isLabelsVisible,
@@ -53,33 +50,6 @@ const EmailViewHeader: React.FC<EmailViewHeaderProps> = ({
             </span>
           </div>
 
-          {/* View Toggle */}
-          {isAuthenticated && (
-            <div className="flex items-center space-x-1 bg-gray-100 rounded-lg p-1 ml-8">
-              <button
-                onClick={() => setCurrentView('email')}
-                className={`flex items-center space-x-2 px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
-                  currentView === 'email'
-                    ? 'bg-white text-blue-600 shadow-sm'
-                    : 'text-gray-600 hover:text-gray-800'
-                }`}
-              >
-                <Mail className="w-4 h-4" />
-                <span>Inbox</span>
-              </button>
-              <button
-                onClick={() => setCurrentView('calendar')}
-                className={`flex items-center space-x-2 px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
-                  currentView === 'calendar'
-                    ? 'bg-white text-purple-600 shadow-sm'
-                    : 'text-gray-600 hover:text-gray-800'
-                }`}
-              >
-                <Calendar className="w-4 h-4" />
-                <span>Calendar</span>
-              </button>
-            </div>
-          )}
         </div>
 
         <div className="flex items-center space-x-3">
@@ -140,7 +110,9 @@ const EmailViewHeader: React.FC<EmailViewHeaderProps> = ({
             </button>
           )}
 
-          <Link 
+          <ThemeToggle />
+
+          <Link
             to="/settings" 
             className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-all duration-200"
             title="Settings"

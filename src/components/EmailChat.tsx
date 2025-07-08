@@ -1,9 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { MessageCircle, Send, Trash2, X, Lightbulb, Sparkles, Calendar, Clock, Zap } from 'lucide-react';
+import { MessageCircle, Send, Trash2, X, Lightbulb, Sparkles } from 'lucide-react';
 import { Button } from './ui/button';
 import { Textarea } from './ui/textarea';
 import { useEmailChat } from '../hooks/useEmailChat';
-import { useCalendar } from '../hooks/useCalendar';
 import { Email, Task } from '../types';
 import { GeminiService } from '../services/geminiService';
 
@@ -17,7 +16,7 @@ interface EmailChatProps {
 
 const EmailChat: React.FC<EmailChatProps> = ({ geminiService, emails, tasks, isOpen, onClose }) => {
   const { messages, isLoading, sendMessage, clearChat, smartSuggestions, generateSmartSuggestions } = useEmailChat(geminiService, emails);
-  const { isAuthenticated: isCalendarConnected, insights, createEvent } = useCalendar(tasks);
+  
   const [inputMessage, setInputMessage] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -39,88 +38,14 @@ const EmailChat: React.FC<EmailChatProps> = ({ geminiService, emails, tasks, isO
     e.preventDefault();
     if (!inputMessage.trim() || isLoading) return;
 
-    // Check if this is a calendar-related query
-    const calendarKeywords = ['free time', 'schedule', 'calendar', 'available', 'busy', 'meeting', 'appointment', 'time slot', 'create event', 'book', 'plan'];
-    const isCalendarQuery = calendarKeywords.some(keyword => 
-      inputMessage.toLowerCase().includes(keyword)
-    );
-
-    // Check for event creation requests
-    const eventCreationKeywords = ['create event', 'schedule meeting', 'book appointment', 'add to calendar', 'plan meeting'];
-    const isEventCreation = eventCreationKeywords.some(keyword => 
-      inputMessage.toLowerCase().includes(keyword)
-    );
-
-    if (isEventCreation && isCalendarConnected && geminiService) {
-      // Handle event creation
-      const eventMatch = inputMessage.match(/(?:create event|schedule meeting|book appointment)(?:\s+for\s+|\s+)?"([^"]+)"|(?:create event|schedule meeting|book appointment)\s+(.+?)(?:\s+at\s+|\s+on\s+|$)/i);
-      const timeMatch = inputMessage.match(/(?:at\s+|on\s+)(\d{1,2}(?::\d{2})?\s*(?:am|pm))/i);
-      const dateMatch = inputMessage.match(/(?:on\s+|for\s+)?(today|tomorrow|monday|tuesday|wednesday|thursday|friday|saturday|sunday|\d{1,2}\/\d{1,2})/i);
-      
-      if (eventMatch) {
-        const eventTitle = eventMatch[1] || eventMatch[2];
-        let eventDate = new Date();
-        
-        if (dateMatch) {
-          const dateStr = dateMatch[1].toLowerCase();
-          if (dateStr === 'tomorrow') {
-            eventDate.setDate(eventDate.getDate() + 1);
-          }
-          // Add more date parsing logic as needed
-        }
-        
-        if (timeMatch) {
-          const timeStr = timeMatch[1];
-          const [time, period] = timeStr.split(/\s*(am|pm)/i);
-          let [hoursStr, minutesStr = '0'] = time.split(':');
-          let hours = parseInt(hoursStr, 10);
-          let minutes = parseInt(minutesStr, 10);
-          
-          if (period?.toLowerCase() === 'pm' && hours !== 12) hours += 12;
-          if (period?.toLowerCase() === 'am' && hours === 12) hours = 0;
-          
-          eventDate.setHours(hours, minutes, 0, 0);
-        } else {
-          // Default to next available free slot
-          if (insights?.freeSlots.length > 0) {
-            eventDate = insights.freeSlots[0].start;
-          }
-        }
-        
-        const endDate = new Date(eventDate.getTime() + 60 * 60 * 1000); // 1 hour duration
-        
-        try {
-          const success = await createEvent({
-            title: eventTitle,
-            start: eventDate,
-            end: endDate,
-            description: `Created via Saha AI Assistant`
-          });
-          
-          if (success) {
-            const confirmationMessage = `✅ Event "${eventTitle}" has been created for ${eventDate.toLocaleDateString()} at ${eventDate.toLocaleTimeString()}`;
-            // Add the user message and AI response
-            await sendMessage(inputMessage);
-            // The success message will be handled by the regular sendMessage flow
-          } else {
-            await sendMessage(inputMessage + " (Note: There was an issue creating the calendar event)");
-          }
-        } catch (error) {
-          await sendMessage(inputMessage + " (Note: Failed to create calendar event)");
-        }
+    try {
+      if (inputMessage.toLowerCase().includes('create event') || inputMessage.toLowerCase().includes('schedule')) {
+        await sendMessage(inputMessage + " (Note: Calendar features are being redesigned)");
       } else {
         await sendMessage(inputMessage);
       }
-    } else if (isCalendarQuery && isCalendarConnected && insights && geminiService) {
-      try {
-        const calendarResponse = await geminiService.generateCalendarSuggestions(inputMessage, tasks, insights);
-        await sendMessage(inputMessage);
-      } catch (error) {
-        console.error('Calendar query error:', error);
-        await sendMessage(inputMessage);
-      }
-    } else {
-      await sendMessage(inputMessage);
+    } catch (error) {
+      console.error('Send message error:', error);
     }
     
     setInputMessage('');
@@ -137,12 +62,12 @@ const EmailChat: React.FC<EmailChatProps> = ({ geminiService, emails, tasks, isO
     }
   };
 
-  const calendarSuggestions = isCalendarConnected && insights ? [
-    `I have ${insights.freeSlots.length} free slots tomorrow — what should I do?`,
-    'Create event for team meeting at 2 PM tomorrow',
-    'Schedule a focus session during my next free hour',
-    'Help me plan my high-priority tasks this week'
-  ] : [];
+  const suggestions = [
+    "Summarize my unread emails",
+    "Find emails about meetings",
+    "What are my urgent tasks?",
+    "Draft a response to the latest email"
+  ];
 
   if (!isOpen) return null;
 
@@ -158,7 +83,7 @@ const EmailChat: React.FC<EmailChatProps> = ({ geminiService, emails, tasks, isO
             <div>
               <h2 className="text-xl font-semibold text-slate-800">AI Email Assistant</h2>
               <p className="text-sm text-slate-600">
-                Powered by Gemini • {emails.length} emails • {isCalendarConnected ? `${insights?.freeSlots.length || 0} free slots` : 'Calendar ready'}
+                Powered by Gemini • {emails.length} emails
               </p>
             </div>
           </div>
@@ -193,7 +118,7 @@ const EmailChat: React.FC<EmailChatProps> = ({ geminiService, emails, tasks, isO
               </div>
               <h3 className="text-xl font-semibold mb-3 text-slate-800">Start an intelligent conversation</h3>
               <p className="text-sm mb-6 max-w-md mx-auto">
-                Ask me anything about your emails, schedule, and tasks. I can help you find information, manage time, and optimize productivity.
+                Ask me anything about your emails and tasks. I can help you find information, manage time, and optimize productivity.
               </p>
               
               {/* Email suggestions */}
@@ -217,38 +142,24 @@ const EmailChat: React.FC<EmailChatProps> = ({ geminiService, emails, tasks, isO
                 </div>
               )}
 
-              {/* Calendar suggestions */}
-              {calendarSuggestions.length > 0 && (
-                <div className="space-y-3">
-                  <div className="flex items-center justify-center space-x-2 text-sm text-slate-600 mb-4">
-                    <Calendar className="w-4 h-4" />
-                    <span>Schedule optimization:</span>
-                  </div>
-                  <div className="grid gap-3 max-w-lg mx-auto">
-                    {calendarSuggestions.map((suggestion, index) => (
-                      <button
-                        key={index}
-                        onClick={() => handleSuggestionClick(suggestion)}
-                        className="p-3 bg-gradient-to-r from-purple-50 to-pink-50 hover:from-purple-100 hover:to-pink-100 border border-purple-200 rounded-lg text-sm text-slate-700 transition-all duration-200 hover:shadow-md"
-                      >
-                        {suggestion}
-                      </button>
-                    ))}
-                  </div>
+              {/* Quick suggestions */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-center space-x-2 text-sm text-slate-600 mb-4">
+                  <Sparkles className="w-4 h-4" />
+                  <span>Quick actions:</span>
                 </div>
-              )}
-
-              {!isCalendarConnected && (
-                <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg max-w-md mx-auto">
-                  <div className="flex items-center space-x-2 text-yellow-700 mb-2">
-                    <Clock className="w-4 h-4" />
-                    <span className="text-sm font-medium">Enhanced Scheduling Available</span>
-                  </div>
-                  <p className="text-xs text-yellow-600">
-                    Connect your Google Calendar for AI-powered time management and smart task scheduling.
-                  </p>
+                <div className="grid gap-3 max-w-lg mx-auto">
+                  {suggestions.map((suggestion, index) => (
+                    <button
+                      key={index}
+                      onClick={() => handleSuggestionClick(suggestion)}
+                      className="p-3 bg-gradient-to-r from-purple-50 to-pink-50 hover:from-purple-100 hover:to-pink-100 border border-purple-200 rounded-lg text-sm text-slate-700 transition-all duration-200 hover:shadow-md"
+                    >
+                      {suggestion}
+                    </button>
+                  ))}
                 </div>
-              )}
+              </div>
             </div>
           ) : (
             messages.map((message) => (
@@ -297,7 +208,7 @@ const EmailChat: React.FC<EmailChatProps> = ({ geminiService, emails, tasks, isO
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
               onKeyPress={handleKeyPress}
-              placeholder={isCalendarConnected ? "Ask about emails, tasks, or schedule..." : "Ask me about your emails..."}
+              placeholder="Ask me about your emails..."
               className="flex-1 min-h-[50px] max-h-32 resize-none border-slate-300 focus:border-blue-500 focus:ring-blue-500"
               disabled={isLoading || !geminiService}
             />

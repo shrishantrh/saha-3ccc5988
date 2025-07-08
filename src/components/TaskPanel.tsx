@@ -1,7 +1,7 @@
 import React from 'react';
 import { CheckCircle, Circle, Mail, X, AlertTriangle, Clock, Bot, Calendar, FileText, MessageSquare, Zap, Timer } from 'lucide-react';
 import { Task, Email } from '../types';
-import DatePickerInput from './DatePickerInput';
+
 
 interface TaskPanelProps {
   tasks: Task[];
@@ -172,19 +172,15 @@ const TaskPanel: React.FC<TaskPanelProps> = ({
 
             {!completed && (
               <div className="mt-1 flex items-center justify-between">
-                <DatePickerInput
-                  date={new Date(task.dueDate)}
-                  onDateChange={(date) => handleDateChange(task.id, date)}
-                >
-                  <span className={`text-xs cursor-pointer hover:underline ${
+                <input
+                  type="date"
+                  value={task.dueDate}
+                  onChange={(e) => handleDateChange(task.id, new Date(e.target.value))}
+                  className={`text-xs cursor-pointer hover:underline border-0 bg-transparent p-0 ${
                     task.daysLeft <= 1 ? 'text-red-600 font-medium' : 
                     task.daysLeft <= 3 ? 'text-yellow-600' : 'text-slate-500'
-                  }`}>
-                    {task.daysLeft === 0 ? 'Due today' : 
-                     task.daysLeft === 1 ? '1 day left' : 
-                     `${task.daysLeft} days left`}
-                  </span>
-                </DatePickerInput>
+                  }`}
+                />
               </div>
             )}
           </div>

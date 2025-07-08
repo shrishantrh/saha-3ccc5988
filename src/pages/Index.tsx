@@ -94,7 +94,6 @@ const Index = () => {
   const [tasks, setTasks] = useState<Task[]>(mockTasks);
   const [replyTo, setReplyTo] = useState<Email | null>(null);
   const [isChatOpen, setIsChatOpen] = useState(false);
-  const [currentView, setCurrentView] = useState<'email' | 'calendar'>('email');
   const [isComposerOpen, setIsComposerOpen] = useState(false);
   const [selectedEmails, setSelectedEmails] = useState<Set<string>>(new Set());
   const [filteredEmails, setFilteredEmails] = useState<Email[]>([]);
@@ -438,8 +437,6 @@ const Index = () => {
       <EmailViewHeader
         isAuthenticated={isAuthenticated}
         isGeminiConnected={isGeminiConnected}
-        currentView={currentView}
-        setCurrentView={setCurrentView}
         showSearchBar={showSearchBar}
         setShowSearchBar={setShowSearchBar}
         isLabelsVisible={isLabelsVisible}
@@ -454,7 +451,6 @@ const Index = () => {
 
       {isAuthenticated ? (
         <EmailInboxView
-          currentView={currentView}
           isGeminiConnected={isGeminiConnected}
           isLabelsVisible={isLabelsVisible}
           labels={labels}

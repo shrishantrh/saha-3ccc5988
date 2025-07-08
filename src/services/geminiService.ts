@@ -2,22 +2,18 @@
 import { GeminiAnalyzer } from './geminiAnalyzer';
 import { GeminiReplyGenerator } from './geminiReply';
 import { GeminiSearchEngine } from './geminiSearch';
-import { GeminiCalendarService } from './geminiCalendar';
 import { EmailSummary, EmailContext } from '../types/gemini';
-import { CalendarInsight } from '../types/calendar';
 import { Task } from '../types';
 
 export class GeminiService {
   private analyzer: GeminiAnalyzer;
   private replyGenerator: GeminiReplyGenerator;
   private searchEngine: GeminiSearchEngine;
-  private calendarService: GeminiCalendarService;
 
   constructor(apiKey: string) {
     this.analyzer = new GeminiAnalyzer(apiKey);
     this.replyGenerator = new GeminiReplyGenerator(apiKey);
     this.searchEngine = new GeminiSearchEngine(apiKey);
-    this.calendarService = new GeminiCalendarService(apiKey);
   }
 
   async analyzeEmail(subject: string, body: string, sender: string): Promise<EmailSummary> {
@@ -36,13 +32,6 @@ export class GeminiService {
     return this.searchEngine.generateSmartSuggestions(emails);
   }
 
-  async generateCalendarSuggestions(freeTimeMessage: string, tasks: Task[], insights: CalendarInsight): Promise<string> {
-    return this.calendarService.generateCalendarSuggestions(freeTimeMessage, tasks, insights);
-  }
-
-  async breakDownTask(taskTitle: string, timeframe: 'days' | 'weeks' | 'hours', availableTimeSlots: { start: Date; end: Date; duration: number }[]): Promise<{ subtasks: Array<{ title: string; duration: number; priority: string }>, schedule: Array<{ subtask: string; timeSlot: string }> }> {
-    return this.calendarService.breakDownTask(taskTitle, timeframe, availableTimeSlots);
-  }
 }
 
 export const geminiService = {
