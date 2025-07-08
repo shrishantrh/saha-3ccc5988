@@ -12,32 +12,38 @@ export const useCalendar = (tasks: Task[]) => {
   const [insights, setInsights] = useState<CalendarInsight | null>(null);
 
   useEffect(() => {
-    console.log('useCalendar: Checking initial authentication...');
-    const authStatus = googleCalendarService.checkAuth();
-    console.log('useCalendar: Initial auth status:', authStatus);
-    setIsAuthenticated(authStatus);
+    console.log('useCalendar: Checking authentication status...');
+    try {
+      const authStatus = googleCalendarService.checkAuth();
+      console.log('useCalendar: Auth status:', authStatus);
+      setIsAuthenticated(authStatus);
+      if (authStatus) {
+        fetchEvents();
+      }
+    } catch (err) {
+      console.error('useCalendar: Error checking auth:', err);
+      setIsAuthenticated(false);
+    }
   }, []);
 
   const login = async () => {
-    console.log('useCalendar: Starting login process...');
+    console.log('useCalendar: Starting login...');
     try {
       setIsLoading(true);
       setError(null);
       await googleCalendarService.authenticateCalendar();
-      console.log('useCalendar: Authentication successful');
       setIsAuthenticated(true);
       await fetchEvents();
+      console.log('useCalendar: Login successful');
     } catch (err) {
-      const errorMessage = 'Failed to connect to Google Calendar';
-      console.error('useCalendar: Calendar auth error:', err);
-      setError(errorMessage);
+      console.error('useCalendar: Login error:', err);
+      setError('Failed to connect to Google Calendar. Please try again.');
     } finally {
       setIsLoading(false);
     }
   };
 
   const logout = async () => {
-    console.log('useCalendar: Starting logout process...');
     try {
       await googleCalendarService.logout();
       setIsAuthenticated(false);
@@ -45,12 +51,11 @@ export const useCalendar = (tasks: Task[]) => {
       setInsights(null);
       console.log('useCalendar: Logout successful');
     } catch (err) {
-      console.error('useCalendar: Calendar logout error:', err);
+      console.error('useCalendar: Logout error:', err);
     }
   };
 
   const fetchEvents = async (timeMin?: Date, timeMax?: Date) => {
-    console.log('useCalendar: Fetching events, authenticated:', isAuthenticated);
     if (!isAuthenticated) {
       console.log('useCalendar: Not authenticated, skipping fetch');
       return;
@@ -59,40 +64,41 @@ export const useCalendar = (tasks: Task[]) => {
     try {
       setIsLoading(true);
       setError(null);
-      console.log('useCalendar: Calling googleCalendarService.fetchEvents...');
-      const googleEvents = await googleCalendarService.fetchEvents(timeMin, timeMax);
-      console.log('useCalendar: Received events:', googleEvents.length);
+      
+      const defaultTimeMin = timeMin || new Date();
+      const defaultTimeMax = timeMax || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
+      
+      console.log('useCalendar: Fetching events...');
+      const googleEvents = await googleCalendarService.fetchEvents(defaultTimeMin, defaultTimeMax);
+      console.log('useCalendar: Retrieved', googleEvents.length, 'events');
       
       const convertedEvents: CalendarEvent[] = googleEvents.map(event => ({
-        id: event.id,
+        id: event.id || Math.random().toString(),
         title: event.summary || 'Untitled Event',
         description: event.description,
-        start: new Date(event.start?.dateTime || event.start?.date),
-        end: new Date(event.end?.dateTime || event.end?.date),
+        start: new Date(event.start?.dateTime || event.start?.date || new Date()),
+        end: new Date(event.end?.dateTime || event.end?.date || new Date()),
         location: event.location,
         source: 'google' as const,
         attendees: event.attendees?.map((a: any) => a.email) || []
       }));
 
-      console.log('useCalendar: Converted events:', convertedEvents.length);
       setEvents(convertedEvents);
       generateInsights(convertedEvents, tasks);
     } catch (err) {
-      const errorMessage = 'Failed to fetch calendar events';
-      console.error('useCalendar: Fetch events error:', err);
-      setError(errorMessage);
+      console.error('useCalendar: Fetch error:', err);
+      setError('Failed to fetch calendar events');
     } finally {
       setIsLoading(false);
     }
   };
 
   const generateInsights = (calendarEvents: CalendarEvent[], userTasks: Task[]) => {
-    console.log('useCalendar: Generating insights for', calendarEvents.length, 'events and', userTasks.length, 'tasks');
     const now = new Date();
     const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
     
-    // Find free time slots for tomorrow
-    const tomorrowEvents = calendarEvents.filter(event => 
+    // Find today's events
+    const todayEvents = calendarEvents.filter(event => 
       event.start >= now && event.start <= tomorrow
     ).sort((a, b) => a.start.getTime() - b.start.getTime());
 
@@ -100,7 +106,7 @@ export const useCalendar = (tasks: Task[]) => {
     const busyPeriods: TimeSlot[] = [];
 
     // Add busy periods
-    tomorrowEvents.forEach(event => {
+    todayEvents.forEach(event => {
       busyPeriods.push({
         start: event.start,
         end: event.end,
@@ -108,70 +114,67 @@ export const useCalendar = (tasks: Task[]) => {
       });
     });
 
-    // Calculate free slots (simplified - between 9 AM and 6 PM)
-    const dayStart = new Date(tomorrow);
+    // Simple free time calculation (9 AM to 6 PM)
+    const dayStart = new Date();
     dayStart.setHours(9, 0, 0, 0);
-    const dayEnd = new Date(tomorrow);
+    const dayEnd = new Date();
     dayEnd.setHours(18, 0, 0, 0);
 
-    let currentTime = dayStart;
-    tomorrowEvents.forEach(event => {
-      if (currentTime < event.start) {
-        const slotDuration = (event.start.getTime() - currentTime.getTime()) / (1000 * 60);
-        if (slotDuration >= 30) { // Only slots of 30+ minutes
+    if (todayEvents.length === 0) {
+      // Full day free
+      freeSlots.push({
+        start: dayStart,
+        end: dayEnd,
+        duration: 9 * 60 // 9 hours
+      });
+    } else {
+      // Calculate gaps between events
+      let currentTime = dayStart;
+      todayEvents.forEach(event => {
+        if (currentTime < event.start) {
+          const duration = (event.start.getTime() - currentTime.getTime()) / (1000 * 60);
+          if (duration >= 30) {
+            freeSlots.push({
+              start: new Date(currentTime),
+              end: new Date(event.start),
+              duration
+            });
+          }
+        }
+        currentTime = new Date(Math.max(currentTime.getTime(), event.end.getTime()));
+      });
+
+      // Add final slot if available
+      if (currentTime < dayEnd) {
+        const duration = (dayEnd.getTime() - currentTime.getTime()) / (1000 * 60);
+        if (duration >= 30) {
           freeSlots.push({
             start: new Date(currentTime),
-            end: new Date(event.start),
-            duration: slotDuration
+            end: new Date(dayEnd),
+            duration
           });
         }
       }
-      currentTime = new Date(Math.max(currentTime.getTime(), event.end.getTime()));
-    });
-
-    // Add final slot if day isn't fully booked
-    if (currentTime < dayEnd) {
-      const slotDuration = (dayEnd.getTime() - currentTime.getTime()) / (1000 * 60);
-      if (slotDuration >= 30) {
-        freeSlots.push({
-          start: new Date(currentTime),
-          end: new Date(dayEnd),
-          duration: slotDuration
-        });
-      }
     }
 
-    // Generate task suggestions based on free time and high-priority tasks
+    // Generate task suggestions
     const highPriorityTasks = userTasks.filter(task => 
-      !task.completed && (task.priority === 'high' || task.priority === 'medium')
-    );
+      !task.completed && task.priority === 'high'
+    ).slice(0, 3);
 
-    const suggestedTasks: TaskSuggestion[] = freeSlots.map(slot => {
-      const suitableTasks = highPriorityTasks.filter(task => {
-        // Estimate task duration (simplified)
-        const estimatedDuration = task.priority === 'high' ? 90 : 60;
-        return estimatedDuration <= slot.duration;
-      }).slice(0, 2); // Max 2 tasks per slot
+    const suggestedTasks: TaskSuggestion[] = freeSlots.slice(0, 2).map((slot, index) => ({
+      task: highPriorityTasks[index]?.title || `Focus session ${index + 1}`,
+      estimatedDuration: Math.min(slot.duration, 90),
+      priority: 'high' as const,
+      taskIds: highPriorityTasks[index] ? [highPriorityTasks[index].id] : [],
+      reason: `${Math.floor(slot.duration / 60)}h ${slot.duration % 60}m available`
+    }));
 
-      return {
-        task: slot.duration >= 120 
-          ? `Focus session: Complete ${suitableTasks.length} high-priority tasks`
-          : `Quick win: ${suitableTasks[0]?.title || 'Review pending items'}`,
-        estimatedDuration: Math.min(slot.duration, 120),
-        priority: suitableTasks.some(t => t.priority === 'high') ? 'high' : 'medium',
-        taskIds: suitableTasks.map(t => t.id),
-        reason: `You have ${Math.floor(slot.duration / 60)}h ${slot.duration % 60}m free at ${slot.start.toLocaleTimeString()}`
-      };
-    });
-
-    const newInsights = {
+    setInsights({
       freeSlots,
       suggestedTasks,
       busyPeriods
-    };
-
-    console.log('useCalendar: Generated insights:', newInsights);
-    setInsights(newInsights);
+    });
   };
 
   const createEvent = async (eventData: {
@@ -181,20 +184,17 @@ export const useCalendar = (tasks: Task[]) => {
     end: Date;
     location?: string;
   }) => {
-    console.log('useCalendar: Creating event:', eventData);
     try {
       setIsLoading(true);
       const success = await googleCalendarService.createEvent(eventData);
-      console.log('useCalendar: Create event result:', success);
       if (success) {
-        await fetchEvents(); // Refresh events
+        await fetchEvents();
         return true;
       }
       return false;
     } catch (err) {
-      const errorMessage = 'Failed to create calendar event';
       console.error('useCalendar: Create event error:', err);
-      setError(errorMessage);
+      setError('Failed to create event');
       return false;
     } finally {
       setIsLoading(false);

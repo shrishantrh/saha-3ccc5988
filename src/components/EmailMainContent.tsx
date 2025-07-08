@@ -39,6 +39,9 @@ interface EmailMainContentProps {
   handleTaskDelete: (taskId: string) => void;
   handleTaskPriorityChange: (taskId: string) => void;
   handleTaskDateChange: (taskId: string, newDate: Date) => void;
+  onStarEmail?: (emailId: string) => void;
+  onArchiveEmail?: (emailId: string) => void;
+  onDeleteEmail?: (emailId: string) => void;
 }
 
 const EmailMainContent: React.FC<EmailMainContentProps> = ({
@@ -73,10 +76,13 @@ const EmailMainContent: React.FC<EmailMainContentProps> = ({
   handleTaskComplete,
   handleTaskDelete,
   handleTaskPriorityChange,
-  handleTaskDateChange
+  handleTaskDateChange,
+  onStarEmail,
+  onArchiveEmail,
+  onDeleteEmail
 }) => {
   return (
-    <div className="flex h-[calc(100vh-120px)]">
+    <div className="flex h-[calc(100vh-120px)] w-full overflow-hidden">
       {/* Collapsible Labels Panel */}
       <EmailMainSidebar
         isLabelsVisible={isLabelsVisible}
@@ -89,47 +95,56 @@ const EmailMainContent: React.FC<EmailMainContentProps> = ({
         selectedLabel={selectedLabel}
       />
 
-      {/* Main Content Area */}
-      <div className="flex-1 flex">
-        {/* Email List */}
-        <EmailListSection
-          displayEmails={displayEmails}
-          selectedEmails={selectedEmails}
-          handleSelectAll={handleSelectAll}
-          handleDeselectAll={handleDeselectAll}
-          handleBulkMarkAsRead={handleBulkMarkAsRead}
-          handleBulkMarkAsUnread={handleBulkMarkAsUnread}
-          handleBulkArchive={handleBulkArchive}
-          handleBulkDelete={handleBulkDelete}
-          handleAddLabel={handleAddLabel}
-          isAllSelected={isAllSelected}
-          isLoading={isLoading}
-          error={error}
-          refetch={refetch}
-          isGeminiConnected={isGeminiConnected}
-          handleEmailSelect={handleEmailSelect}
-          selectedEmail={selectedEmail}
-          handleSelectEmail={handleSelectEmail}
-          labels={labels}
-          aiCategories={aiCategories}
-        />
+      {/* Main Content Area - Fixed Layout */}
+      <div className="flex flex-1 min-w-0">
+        {/* Email List - Fixed Width */}
+        <div className="w-80 flex-shrink-0">
+          <EmailListSection
+            displayEmails={displayEmails}
+            selectedEmails={selectedEmails}
+            handleSelectAll={handleSelectAll}
+            handleDeselectAll={handleDeselectAll}
+            handleBulkMarkAsRead={handleBulkMarkAsRead}
+            handleBulkMarkAsUnread={handleBulkMarkAsUnread}
+            handleBulkArchive={handleBulkArchive}
+            handleBulkDelete={handleBulkDelete}
+            handleAddLabel={handleAddLabel}
+            isAllSelected={isAllSelected}
+            isLoading={isLoading}
+            error={error}
+            refetch={refetch}
+            isGeminiConnected={isGeminiConnected}
+            handleEmailSelect={handleEmailSelect}
+            selectedEmail={selectedEmail}
+            handleSelectEmail={handleSelectEmail}
+            labels={labels}
+            aiCategories={aiCategories}
+          />
+        </div>
 
-        {/* Email Detail */}
-        <EmailDetailSection
-          selectedEmail={selectedEmail}
-          handleReplyClick={handleReplyClick}
-        />
+        {/* Email Detail - Fixed Width */}
+        <div className="flex-1 min-w-0 max-w-4xl">
+          <EmailDetailSection
+            selectedEmail={selectedEmail}
+            handleReplyClick={handleReplyClick}
+            onStarEmail={onStarEmail}
+            onArchiveEmail={onArchiveEmail}
+            onDeleteEmail={onDeleteEmail}
+          />
+        </div>
 
-        {/* Task Panel */}
-        <TaskPanelSection
-          tasks={tasks}
-          emails={emails}
-          handleTaskComplete={handleTaskComplete}
-          handleTaskDelete={handleTaskDelete}
-          handleTaskPriorityChange={handleTaskPriorityChange}
-          handleTaskDateChange={handleTaskDateChange}
-          handleEmailSelect={handleEmailSelect}
-        />
+        {/* Task Panel - Fixed Width */}
+        <div className="w-72 flex-shrink-0">
+          <TaskPanelSection
+            tasks={tasks}
+            emails={emails}
+            handleTaskComplete={handleTaskComplete}
+            handleTaskDelete={handleTaskDelete}
+            handleTaskPriorityChange={handleTaskPriorityChange}
+            handleTaskDateChange={handleTaskDateChange}
+            handleEmailSelect={handleEmailSelect}
+          />
+        </div>
       </div>
     </div>
   );

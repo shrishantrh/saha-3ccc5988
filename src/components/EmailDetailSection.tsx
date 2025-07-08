@@ -7,29 +7,37 @@ import { Email } from '../types';
 interface EmailDetailSectionProps {
   selectedEmail: Email | null;
   handleReplyClick: (email: Email) => void;
+  onStarEmail?: (emailId: string) => void;
+  onArchiveEmail?: (emailId: string) => void;
+  onDeleteEmail?: (emailId: string) => void;
 }
 
 const EmailDetailSection: React.FC<EmailDetailSectionProps> = ({
   selectedEmail,
-  handleReplyClick
+  handleReplyClick,
+  onStarEmail,
+  onArchiveEmail,
+  onDeleteEmail
 }) => {
   return (
-    <div className="flex-1 bg-white">
+    <div className="h-full bg-white border-r border-gray-200">
       {selectedEmail ? (
         <EmailDetail 
           email={selectedEmail} 
           onReply={() => handleReplyClick(selectedEmail)}
+          onStar={onStarEmail}
+          onArchive={onArchiveEmail}
+          onDelete={onDeleteEmail}
         />
       ) : (
         <div className="h-full flex items-center justify-center">
           <div className="text-center max-w-md">
-            <div className="w-20 h-20 bg-gradient-to-r from-blue-100 to-purple-100 rounded-2xl flex items-center justify-center mx-auto mb-8">
-              <Mail className="w-10 h-10 text-blue-600" />
+            <div className="w-16 h-16 bg-gradient-to-r from-blue-100 to-purple-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
+              <Mail className="w-8 h-8 text-blue-600" />
             </div>
-            <h3 className="text-2xl font-semibold mb-4 text-gray-900">Select an email</h3>
-            <p className="text-gray-600 leading-relaxed">
-              Choose an email from your inbox to view AI-powered insights, 
-              smart replies, and intelligent task extraction.
+            <h3 className="text-xl font-semibold mb-3 text-gray-900">Select an email</h3>
+            <p className="text-gray-600">
+              Choose an email from your inbox to view AI-powered insights and smart replies.
             </p>
           </div>
         </div>

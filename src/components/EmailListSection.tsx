@@ -49,7 +49,7 @@ const EmailListSection: React.FC<EmailListSectionProps> = ({
   aiCategories
 }) => {
   return (
-    <div className="w-96 bg-white border-r border-gray-200 flex flex-col">
+    <div className="h-full bg-white border-r border-gray-200 flex flex-col">
       {/* Bulk Actions */}
       <EmailBulkActions
         selectedCount={selectedEmails.size}
@@ -68,26 +68,26 @@ const EmailListSection: React.FC<EmailListSectionProps> = ({
 
       {/* Email List Content */}
       {isLoading ? (
-        <div className="flex flex-col items-center justify-center h-full p-8">
-          <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-6"></div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">Loading your emails</h3>
+        <div className="flex flex-col items-center justify-center h-full p-6">
+          <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Loading emails</h3>
           {isGeminiConnected && (
             <p className="text-sm text-blue-600 flex items-center space-x-2">
               <span>✨</span>
-              <span>Analyzing with Gemini AI</span>
+              <span>AI analyzing</span>
             </p>
           )}
         </div>
       ) : error ? (
-        <div className="flex flex-col items-center justify-center h-full p-8">
-          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-6">
-            <AlertCircle className="w-8 h-8 text-red-500" />
+        <div className="flex flex-col items-center justify-center h-full p-6">
+          <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mb-4">
+            <AlertCircle className="w-6 h-6 text-red-500" />
           </div>
           <h3 className="text-lg font-medium text-gray-900 mb-2">Error loading emails</h3>
-          <p className="text-gray-600 mb-6 text-center text-sm">{error}</p>
+          <p className="text-gray-600 mb-4 text-center text-sm">{error}</p>
           <button 
             onClick={() => refetch()} 
-            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-md font-medium"
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
             Try Again
           </button>
