@@ -122,8 +122,8 @@ const EmailMainContent: React.FC<EmailMainContentProps> = ({
           />
         </div>
 
-        {/* Email Detail - Fixed Width */}
-        <div className="flex-1 min-w-0 max-w-4xl">
+        {/* Email Detail - Flexible Width */}
+        <div className="flex-1 min-w-0">
           <EmailDetailSection
             selectedEmail={selectedEmail}
             handleReplyClick={handleReplyClick}
