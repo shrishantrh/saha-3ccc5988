@@ -4,6 +4,7 @@ import EmailComposer from './EmailComposer';
 import ReplyInterface from './ReplyInterface';
 import EmailChat from './EmailChat';
 import EmailMainContent from './EmailMainContent';
+import { SmartReplyPanel } from './SmartReplyPanel';
 import { Email, Task } from '../types';
 
 interface EmailInboxViewProps {
@@ -34,6 +35,7 @@ interface EmailInboxViewProps {
   selectedEmail: Email | null;
   handleSelectEmail: (emailId: string) => void;
   handleReplyClick: (email: Email) => void;
+  handleSmartReply: (email: Email) => void;
   tasks: Task[];
   emails: Email[];
   handleTaskComplete: (taskId: string) => void;
@@ -50,6 +52,9 @@ interface EmailInboxViewProps {
   isChatOpen: boolean;
   setIsChatOpen: (open: boolean) => void;
   geminiService: any;
+  smartReplyOpen: Email | null;
+  setSmartReplyOpen: (email: Email | null) => void;
+  handleSendSmartReply: (message: string) => Promise<void>;
 }
 
 const EmailInboxView: React.FC<EmailInboxViewProps> = ({
@@ -79,6 +84,7 @@ const EmailInboxView: React.FC<EmailInboxViewProps> = ({
   selectedEmail,
   handleSelectEmail,
   handleReplyClick,
+  handleSmartReply,
   tasks,
   emails,
   handleTaskComplete,
@@ -93,7 +99,10 @@ const EmailInboxView: React.FC<EmailInboxViewProps> = ({
   handleSendReply,
   isChatOpen,
   setIsChatOpen,
-  geminiService
+  geminiService,
+  smartReplyOpen,
+  setSmartReplyOpen,
+  handleSendSmartReply
 }) => {
   return (
     <>
@@ -147,6 +156,18 @@ const EmailInboxView: React.FC<EmailInboxViewProps> = ({
           onSend={handleSendReply}
           onCancel={() => setReplyTo(null)}
         />
+      )}
+
+      {/* Smart Reply Panel */}
+      {smartReplyOpen && (
+        <div className="fixed bottom-4 right-4 w-96 z-50">
+          <SmartReplyPanel
+            email={smartReplyOpen}
+            geminiService={geminiService}
+            onSendReply={handleSendSmartReply}
+            onClose={() => setSmartReplyOpen(null)}
+          />
+        </div>
       )}
 
       {/* AI Chat Interface */}

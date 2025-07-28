@@ -95,6 +95,7 @@ const Index = () => {
   const [replyTo, setReplyTo] = useState<Email | null>(null);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isComposerOpen, setIsComposerOpen] = useState(false);
+  const [smartReplyOpen, setSmartReplyOpen] = useState<Email | null>(null);
   const [selectedEmails, setSelectedEmails] = useState<Set<string>>(new Set());
   const [filteredEmails, setFilteredEmails] = useState<Email[]>([]);
   const [labels, setLabels] = useState([
@@ -199,7 +200,11 @@ const Index = () => {
   };
 
   const handleReplyClick = (email: Email) => {
-    setReplyTo(email);
+    setSmartReplyOpen(email);
+  };
+
+  const handleSmartReply = (email: Email) => {
+    setSmartReplyOpen(email);
   };
 
   const handleCompose = () => {
@@ -429,11 +434,29 @@ const Index = () => {
     }
   };
 
+  const handleSendSmartReply = async (message: string) => {
+    if (smartReplyOpen) {
+      try {
+        if (isAuthenticated) {
+          await gmailService.sendEmail(
+            smartReplyOpen.sender, 
+            `Re: ${smartReplyOpen.subject}`, 
+            message
+          );
+        }
+        console.log(`Sending smart reply to ${smartReplyOpen.sender}: ${message}`);
+        setSmartReplyOpen(null);
+      } catch (error) {
+        console.error('Failed to send smart reply:', error);
+      }
+    }
+  };
+
   const categories = [...new Set(emails.map(email => email.category))];
   const displayEmails = filteredEmails.length > 0 || selectedLabel ? filteredEmails : emails;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background text-foreground">
       <EmailViewHeader
         isAuthenticated={isAuthenticated}
         isGeminiConnected={isGeminiConnected}
@@ -477,6 +500,7 @@ const Index = () => {
           selectedEmail={selectedEmail}
           handleSelectEmail={handleSelectEmail}
           handleReplyClick={handleReplyClick}
+          handleSmartReply={handleSmartReply}
           tasks={tasks}
           emails={emails}
           handleTaskComplete={handleTaskComplete}
@@ -492,6 +516,9 @@ const Index = () => {
           isChatOpen={isChatOpen}
           setIsChatOpen={setIsChatOpen}
           geminiService={geminiService}
+          smartReplyOpen={smartReplyOpen}
+          setSmartReplyOpen={setSmartReplyOpen}
+          handleSendSmartReply={handleSendSmartReply}
         />
       ) : (
         <WelcomeScreen />

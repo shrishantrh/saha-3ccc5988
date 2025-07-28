@@ -1,12 +1,13 @@
 
 import React, { useState } from 'react';
-import { Mail, Reply, Archive, Trash2, Star, MoreHorizontal, Zap, Clock, CheckCircle, AlertTriangle, Calendar } from 'lucide-react';
+import { Mail, Reply, Archive, Trash2, Star, MoreHorizontal, Zap, Clock, CheckCircle, AlertTriangle, Calendar, Sparkles } from 'lucide-react';
 import { Email } from '../types';
 
 
 interface EmailDetailProps {
   email: Email;
   onReply: () => void;
+  onSmartReply?: () => void;
   onStar?: (emailId: string) => void;
   onArchive?: (emailId: string) => void;
   onDelete?: (emailId: string) => void;
@@ -15,6 +16,7 @@ interface EmailDetailProps {
 const EmailDetail: React.FC<EmailDetailProps> = ({ 
   email, 
   onReply, 
+  onSmartReply,
   onStar, 
   onArchive, 
   onDelete 
@@ -68,14 +70,14 @@ const EmailDetail: React.FC<EmailDetailProps> = ({
   return (
     <div className="h-full flex flex-col max-w-4xl">
       {/* Email Header */}
-      <div className="p-4 border-b border-slate-200 bg-white">
+      <div className="p-4 border-b border-border bg-background">
         <div className="flex items-start justify-between mb-3">
           <div className="flex-1 min-w-0 pr-4">
-            <h1 className="text-lg font-semibold text-slate-900 mb-2 line-clamp-2">
+            <h1 className="text-lg font-semibold text-foreground mb-2 line-clamp-2">
               {email.subject}
             </h1>
-            <div className="flex items-center space-x-3 text-sm text-slate-600 mb-3">
-              <span>From: <strong className="text-slate-800">{email.sender}</strong></span>
+            <div className="flex items-center space-x-3 text-sm text-muted-foreground mb-3">
+              <span>From: <strong className="text-foreground">{email.sender}</strong></span>
               <span>{email.timestamp}</span>
             </div>
             
@@ -108,21 +110,21 @@ const EmailDetail: React.FC<EmailDetailProps> = ({
           <div className="flex items-center space-x-1">
             <button 
               onClick={handleStar}
-              className={`p-2 hover:bg-slate-100 rounded-lg transition-colors ${
-                isStarred ? 'text-yellow-500' : 'text-slate-500'
+              className={`p-2 hover:bg-accent rounded-lg transition-colors ${
+                isStarred ? 'text-yellow-500' : 'text-muted-foreground'
               }`}
             >
               <Star className={`w-4 h-4 ${isStarred ? 'fill-current' : ''}`} />
             </button>
             <button 
               onClick={handleArchive}
-              className="p-2 hover:bg-slate-100 rounded-lg transition-colors text-slate-500"
+              className="p-2 hover:bg-accent rounded-lg transition-colors text-muted-foreground"
             >
               <Archive className="w-4 h-4" />
             </button>
             <button 
               onClick={handleDelete}
-              className="p-2 hover:bg-red-100 rounded-lg transition-colors text-red-500"
+              className="p-2 hover:bg-destructive/10 rounded-lg transition-colors text-destructive"
             >
               <Trash2 className="w-4 h-4" />
             </button>
@@ -130,17 +132,17 @@ const EmailDetail: React.FC<EmailDetailProps> = ({
         </div>
 
         {/* Compact AI Summary */}
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-3">
+        <div className="bg-primary/10 border border-primary/20 rounded-lg p-3 mb-3">
           <div className="flex items-center space-x-2 mb-2">
-            <span className="text-blue-600 text-sm">✨ AI Summary</span>
+            <span className="text-primary text-sm">✨ AI Summary</span>
             {estimatedResponseTime && (
-              <div className="flex items-center space-x-1 text-xs text-slate-600">
+              <div className="flex items-center space-x-1 text-xs text-muted-foreground">
                 <Clock className="w-3 h-3" />
                 <span>{estimatedResponseTime}</span>
               </div>
             )}
           </div>
-          <p className="text-sm text-slate-700">
+          <p className="text-sm text-foreground">
             {email.summary}
           </p>
         </div>
@@ -149,14 +151,24 @@ const EmailDetail: React.FC<EmailDetailProps> = ({
         <div className="flex items-center space-x-2">
           <button 
             onClick={onReply}
-            className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            className="flex items-center space-x-2 px-4 py-2 bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/80 transition-colors"
           >
             <Reply className="w-4 h-4" />
             <span>Reply</span>
           </button>
+
+          {onSmartReply && (
+            <button 
+              onClick={onSmartReply}
+              className="flex items-center space-x-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+            >
+              <Sparkles className="w-4 h-4" />
+              <span>Smart Reply</span>
+            </button>
+          )}
           
           {actionRequired && (
-            <button className="flex items-center space-x-2 px-3 py-2 bg-amber-100 text-amber-700 border border-amber-300 rounded-lg hover:bg-amber-200 transition-colors">
+            <button className="flex items-center space-x-2 px-3 py-2 bg-yellow-100 text-yellow-700 border border-yellow-300 rounded-lg hover:bg-yellow-200 transition-colors">
               <CheckCircle className="w-4 h-4" />
               <span>Mark Complete</span>
             </button>
@@ -166,22 +178,22 @@ const EmailDetail: React.FC<EmailDetailProps> = ({
 
       {/* Email Body */}
       <div className="flex-1 overflow-y-auto p-4">
-        <div className="bg-white rounded-lg border border-slate-200 p-4">
+        <div className="bg-card rounded-lg border border-border p-4">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
-                <Mail className="w-4 h-4 text-white" />
+              <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
+                <Mail className="w-4 h-4 text-primary-foreground" />
               </div>
               <div>
-                <div className="font-medium text-slate-900">{email.sender}</div>
-                <div className="text-sm text-slate-500">to me</div>
+                <div className="font-medium text-foreground">{email.sender}</div>
+                <div className="text-sm text-muted-foreground">to me</div>
               </div>
             </div>
           </div>
 
           {isExpanded && (
             <div className="prose prose-sm max-w-none">
-              <div className="whitespace-pre-wrap text-slate-700 text-sm leading-relaxed">
+              <div className="whitespace-pre-wrap text-foreground text-sm leading-relaxed">
                 {email.body}
               </div>
             </div>

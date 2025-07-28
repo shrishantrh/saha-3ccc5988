@@ -35,17 +35,17 @@ const EmailViewHeader: React.FC<EmailViewHeaderProps> = ({
   labels
 }) => {
   return (
-    <header className="bg-white border-b border-gray-200 px-6 py-4 shadow-sm">
+    <header className="bg-background border-b border-border px-6 py-4 shadow-sm">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
-          <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
-            <Mail className="w-6 h-6 text-white" />
+          <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center shadow-lg">
+            <Mail className="w-6 h-6 text-primary-foreground" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+            <h1 className="text-2xl font-bold text-primary">
               Saha
             </h1>
-            <span className="text-sm text-gray-500 font-medium">
+            <span className="text-sm text-muted-foreground font-medium">
               AI-Powered Email Intelligence
             </span>
           </div>
@@ -60,8 +60,8 @@ const EmailViewHeader: React.FC<EmailViewHeaderProps> = ({
                 onClick={() => setShowSearchBar(!showSearchBar)}
                 className={`p-2 rounded-lg transition-colors ${
                   showSearchBar 
-                    ? 'bg-blue-100 text-blue-600' 
-                    : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+                    ? 'bg-primary/10 text-primary' 
+                    : 'text-muted-foreground hover:text-foreground hover:bg-accent'
                 }`}
                 title="Search"
               >
@@ -72,8 +72,8 @@ const EmailViewHeader: React.FC<EmailViewHeaderProps> = ({
                 onClick={() => setIsLabelsVisible(!isLabelsVisible)}
                 className={`flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                   isLabelsVisible 
-                    ? 'bg-blue-100 text-blue-600' 
-                    : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+                    ? 'bg-primary/10 text-primary' 
+                    : 'text-muted-foreground hover:text-foreground hover:bg-accent'
                 }`}
                 title="Toggle Labels"
               >
@@ -85,8 +85,8 @@ const EmailViewHeader: React.FC<EmailViewHeaderProps> = ({
 
           {/* Status Indicator */}
           {isAuthenticated && (
-            <div className="flex items-center space-x-2 px-3 py-2 bg-green-50 text-green-700 rounded-lg border border-green-200">
-              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+            <div className="flex items-center space-x-2 px-3 py-2 bg-primary/10 text-primary rounded-lg border border-primary/20">
+              <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
               <span className="font-medium text-sm">Gmail Connected</span>
             </div>
           )}
@@ -94,7 +94,7 @@ const EmailViewHeader: React.FC<EmailViewHeaderProps> = ({
           {/* Action Buttons */}
           <button
             onClick={handleCompose}
-            className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200 shadow-md hover:shadow-lg"
+            className="flex items-center space-x-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-all duration-200 shadow-md hover:shadow-lg"
           >
             <Edit className="w-4 h-4" />
             <span className="font-medium">Compose</span>
@@ -103,7 +103,7 @@ const EmailViewHeader: React.FC<EmailViewHeaderProps> = ({
           {isGeminiConnected && (
             <button
               onClick={() => setIsChatOpen(true)}
-              className="p-2 text-gray-500 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-all duration-200"
+              className="p-2 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg transition-all duration-200"
               title="AI Assistant"
             >
               <MessageCircle className="w-5 h-5" />
@@ -114,7 +114,7 @@ const EmailViewHeader: React.FC<EmailViewHeaderProps> = ({
 
           <Link
             to="/settings" 
-            className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-all duration-200"
+            className="p-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-all duration-200"
             title="Settings"
           >
             <SettingsIcon className="w-5 h-5" />

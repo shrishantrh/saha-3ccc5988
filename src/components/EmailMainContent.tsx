@@ -33,6 +33,7 @@ interface EmailMainContentProps {
   selectedEmail: Email | null;
   handleSelectEmail: (emailId: string) => void;
   handleReplyClick: (email: Email) => void;
+  handleSmartReply?: (email: Email) => void;
   tasks: Task[];
   emails: Email[];
   handleTaskComplete: (taskId: string) => void;
@@ -71,6 +72,7 @@ const EmailMainContent: React.FC<EmailMainContentProps> = ({
   selectedEmail,
   handleSelectEmail,
   handleReplyClick,
+  handleSmartReply,
   tasks,
   emails,
   handleTaskComplete,
@@ -127,6 +129,7 @@ const EmailMainContent: React.FC<EmailMainContentProps> = ({
           <EmailDetailSection
             selectedEmail={selectedEmail}
             handleReplyClick={handleReplyClick}
+            handleSmartReply={handleSmartReply}
             onStarEmail={onStarEmail}
             onArchiveEmail={onArchiveEmail}
             onDeleteEmail={onDeleteEmail}
